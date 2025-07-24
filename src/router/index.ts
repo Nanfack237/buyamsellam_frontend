@@ -19,7 +19,7 @@ const router = createRouter({
       name: 'Login',
 
       // Use a functional component for simpler rendering of login page (optional)
-      component: () => import(/* webpackChunkName: "login" */ '@/pages/login.vue'),
+      component: () => import('@/pages/login.vue'),
 
       // Alternatively, directly render the login page if it's static HTML
       // component: login, // Comment out if using functional component import
@@ -29,7 +29,7 @@ const router = createRouter({
 
 // Add access token guard
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('access_token');
+  const token = sessionStorage.getItem('access_token');
   if (!token && to.path !== '/login') {
     next({ name: 'Login' }); // Redirect to login view
     return;

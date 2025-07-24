@@ -1,8 +1,14 @@
 import axios from 'axios';
 
-const token =localStorage.getItem('access_token')
+const token = sessionStorage.getItem('access_token')
+const selectedStore = sessionStorage.getItem('storeId')
 axios.defaults.baseURL = 'http://127.0.0.1:8000/';
-axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+if(token){
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+}
+axios.defaults.headers.common['X-Store-ID'] = selectedStore;
+  
 
 // Add interceptors if needed
 axios.interceptors.request.use(

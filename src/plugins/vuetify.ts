@@ -16,4 +16,11 @@ export default createVuetify({
   theme: {
     // defaultTheme: 'white',
   },
+  defaults: {
+    global: {
+      style:{
+        fontFamily: "Roboto"
+      }
+    }
+  }
 })

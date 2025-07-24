@@ -1,20 +1,20 @@
 <template>
     <v-app>
-      <v-card style="height: 100%;" :loading="loading">
+      <v-card :loading="loading">
         <v-layout>
           <SideBarComponent />
           <HeaderComponent />
-          <v-main style="height: 599px">
+          <v-main  class="h-screen" style="min-height: max-content;">
             <v-row justify="space-between" class="d-flex justify-center px-5 pt-4 pb-2">
               <v-col cols="auto" class="">
-                <p class="font-weight-bold text-h6 " style="color:#0D47A1;">
-                  Supplier <v-icon>mdi-truck</v-icon>
+                <p class="text-high-emphasis text-h6" >
+                  Supplier 
                 </p>
               </v-col>
               <v-col cols="auto">
                 <p class="text-right text-medium-emphasis">{{ formattedDate }}</p>
               </v-col>
-              <v-divider class="border-opacity-100 " color="blue-darken-4"></v-divider>
+              <v-divider class="border-opacity-100 " color="grey-lighten-1"></v-divider>
 
             </v-row>
             
@@ -51,9 +51,7 @@
                             label="Enter the Contact"
                             v-model="contact"
                             variant="outlined"
-                            :rules="[
-                            (v) => !!v || 'Contact is required'
-                            ]"
+                            :rules="[v => !!v || 'Contact is required', v => v.length >= 9 || 'Minimum 9 characters']" 
                         ></v-text-field>
                     </v-col>
                 </v-row>
@@ -64,23 +62,29 @@
                 </v-btn>
               </v-responsive>
             </form>
-            <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="snackbarTimeout" location="bottom right">
+            <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="snackbarTimeout" location="top right">
                 {{ snackbarMessage }}
             </v-snackbar>
-            <FooterComponent/>
+            <AppFooter />
           </v-main>
         </v-layout>
       </v-card>
     </v-app>
+   
   </template>
-  <script setup>
-  import { ref, onMounted } from 'vue';
-  import { useRouter } from 'vue-router';
-  import axios from '@/axios';
-  import { computed } from 'vue'
+<script setup>
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import axios from '@/axios';
+import { computed } from 'vue'
+import { useLoader } from '@/useLoader';
+
+const { startLoading, stopLoading} = useLoader();
     
   
     const formattedDate = computed(() => {
+      
+   
       const date = new Date();
       const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
       const day = daysOfWeek[date.getDay()];   
@@ -88,8 +92,12 @@
       const formattedDateString = date.toLocaleDateString();
     
       return `${day}, ${formattedDateString}`;
+
+     
     });
     
+    
+    const router = useRouter();
     const selectedImage = ref(null);
     const loading = ref(false);
     const snackbar = ref(false);
@@ -98,17 +106,17 @@
     const name = ref('');
     const address = ref('');
     const contact = ref('');
-   
+  
     const CreateSupplier = async () => {
       loading.value = true;
-
+      startLoading()
       try {
         const formData = new FormData();
         formData.append('name', name.value);
         formData.append('address', address.value);
         formData.append('contact', contact.value);
   
-        const token =localStorage.getItem('access_token')
+        const token =sessionStorage.getItem('access_token')
         const response = await axios.post('/api/suppliers/store', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
@@ -117,31 +125,12 @@
         });
     
         if (response.status === 201) {
-          // Store created successfully
+          
           snackbar.value = true;
           snackbarMessage.value = response.data.success || 'Supplier created successfully!';
           snackbarColor.value = 'success';
-          setTimeout(() => router.push('/add-supplier'), 2000);
-          // Optionally, redirect to a success page or display a success message
-    
-          // Create the store folder
-          // const storeFolderName = name.value.replace(/\s+/g, '_').toLowerCase(); // Replace spaces with underscores
-          // const storeFolderPath = `assets/store/${storeFolderName}/images/`; // Replace with your desired path
-    
-          // try {
-          //   await fs.promises.mkdir(storeFolderPath, { recursive: true }); // Create the folder recursively
-          //   console.log('Store folder created successfully:', storeFolderPath);
-    
-          //   // Save the image to the folder
-          //   const imageFileName = Date.now() + '_' + file.name; // Generate a unique filename
-          //   const imageFilePath = `${storeFolderPath}/images/${imageFileName}`;
-    
-          //   await fs.promises.writeFile(imageFilePath, selectedImage.value.replace(/^data:image\/png;base64,/, ''));
-          //   console.log('Image saved successfully:', imageFilePath);
-          // } catch (folderError) {
-          //   console.error('Error creating store folder:', folderError);
-          //   // Handle folder creation error
-          // }
+          setTimeout(() => router.push('/supplier'), 2000);
+
         } else {
           console.error('Error saving supplier:', response.data);
           snackbar.value = true;
@@ -155,6 +144,8 @@
         snackbarColor.value = 'error';
       } finally {
         loading.value = false;
+        stopLoading()
       }
     };
+    
   </script>

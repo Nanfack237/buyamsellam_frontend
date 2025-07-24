@@ -1,209 +1,577 @@
 <template>
-    <v-app>
-      <v-card style="height: 100%;" :loading="loading">
-        <v-layout>
-          <SideBarComponent />
-          <HeaderComponent />
-          <v-main style="height: 100%">
-            <v-row justify="space-between" class="d-flex justify-center px-5 pt-4 pb-2">
-              <v-col cols="auto" class="">
-                <p class="font-weight-bold text-h6" style="color: #0D47A1;">
-                  Create a Store <v-icon>mdi-store</v-icon>
-                </p>
-              </v-col>
-              <v-col cols="auto">
-                <p class="text-right text-medium-emphasis">{{ formattedDate }}</p>
-              </v-col>
-              <v-divider class="border-opacity-100 " color="blue-darken-4"></v-divider>
+  <v-app>
+    <v-card>
+      <v-layout>
+        <SideBarComponent />
+        <HeaderComponent />
+        <v-main class="h-screen" style="min-height: max-content;">
+          <v-row justify="space-between" class="d-flex justify-center px-5 pt-4 pb-2">
+            <v-col cols="auto">
+              <p class="text-high-emphasis text-h6 d-flex align-center">
+                {{ t('createStorePage.title') }}
+              </p>
+            </v-col>
+            <v-col cols="auto">
+              <p class="text-right text-medium-emphasis">{{ formattedDate }}</p>
+            </v-col>
+            <v-divider class="border-opacity-100" color="grey-lighten-1"></v-divider>
+          </v-row>
 
-            </v-row>
-            
-            <form @submit.prevent="CreateStore">
-              <v-container>
-                <p class="text-medium-emphasis py-2">
-                  Please enter the details to create your store
-                </p>
-                <v-row>
-                  <v-col cols="12" sm="6" md="4" class="">
-                    <v-card flat border="grey-lighten-4 thin opacity-60" class="border-thin" height="290">
-                      <v-card-title class="text-medium-emphasis">Add Photo</v-card-title>
-                      <v-card-text>
+          <form @submit.prevent="createStore">
+            <v-container fluid class="pa-5">
+              <p class="text-medium-emphasis py-2 text-subtitle-1">
+                {{ t('createStorePage.formPrompt') }}
+              </p>
+
+              <v-card flat border="thin" class="pa-4 custom-border-card mb-4">
+                <v-card-text>
+                  <v-form ref="storeForm" @submit.prevent="createStore">
+                    <v-row>
+                      <v-col cols="12" sm="6">
+                        <p class="text-medium-emphasis text-body-1 font-weight-bold mb-3">
+                          <v-icon left>mdi-image-plus</v-icon> {{ t('createStorePage.photo1Title') }}
+                        </p>
                         <v-file-input
+                          :label="t('createStorePage.uploadImage1Label')"
                           accept="image/*"
-                          @change="onFileSelected"
-                          prepend-icon="mdi-camera"
-                          variant="plain"
-                          v-model="image"
+                          @change="onFileSelected1"
+                          prepend-icon=""
+                          append-inner-icon="mdi-camera"
+                          variant="outlined"
+                          v-model="imageFile1"
+                          :rules="imageRules1"
+                          clearable
+                          show-size
+                          :hint="t('createStorePage.imageHint')"
+                          persistent-hint
                         />
-                        <v-img v-if="selectedImage" :src="selectedImage" class="mt-5" />
-                      </v-card-text>
-                    </v-card>
-                  </v-col>
-  
-                  <v-col cols="12" sm="6" md="8" class="">
-                    <v-text-field
-                      v-model="name"
-                      label="Name"
-                      type="text"
-                      variant="outlined"
-                      persistent-hint
-                      :rules="[v => !!v || 'This field is required', v => v.length >= 3 || 'Minimum 3 characters']"
-                    />
-                    <v-text-field
-                      v-model="category"
-                      label="Category"
-                      type="text"
-                      variant="outlined"
-                      persistent-hint
-                      :rules="[v => !!v || 'This field is required', v => v.length >= 3 || 'Minimum 3 characters']"
-                    />
-                    <v-text-field
-                      v-model="location"
-                      label="Location"
-                      type="text"
-                      variant="outlined"
-                      persistent-hint
-                      :rules="[v => !!v || 'This field is required', v => v.length >= 3 || 'Minimum 3 characters']"
-                    />
-                    <v-text-field
-                      v-model="contact"
-                      label="Contact"
-                      type="text"
-                      variant="outlined"
-                      persistent-hint
-                      :rules="[v => !!v || 'This field is required', v => v.length >= 3 || 'Minimum 3 characters']"
-                    />
-                    </v-col>
-                    <v-col cols="12"  class="mb-2" style="padding-top: 0px;">
-                      <v-textarea
-                        v-model="description"
-                        label="Description"
-                        variant="outlined"
-                        :rules="[v => !!v || 'This field is required']"
-                        persistent-hint
-                        
-                      />
-                    </v-col>
-                </v-row>
-              </v-container>
-              <v-responsive style="text-align: center" class="">
-                <v-btn type="submit" :loading="loading" color="primary">
-                    Create &nbsp;&nbsp;<v-icon>mdi-store-plus</v-icon>
+                        <div v-if="selectedImagePreview1" class="image-preview-container mt-4">
+                          <v-img :src="selectedImagePreview1" class="rounded-lg elevation-2" aspect-ratio="1.7" cover />
+                        </div>
+                        <div v-else class="no-image-placeholder">
+                          <v-icon size="80" color="grey-lighten-2">mdi-image-off-outline</v-icon>
+                          <p class="text-caption text-grey-lighten-1 mt-2">{{ t('createStorePage.noImage1Selected') }}</p>
+                        </div>
+                      </v-col>
+
+                      <v-col cols="12" sm="6">
+                        <p class="text-medium-emphasis text-body-1 font-weight-bold mb-3">
+                          <v-icon left>mdi-image-plus</v-icon> {{ t('createStorePage.photo2Title') }}
+                        </p>
+                        <v-file-input
+                          :label="t('createStorePage.uploadImage2Label')"
+                          accept="image/*"
+                          @change="onFileSelected2"
+                          prepend-icon=""
+                          append-inner-icon="mdi-camera"
+                          variant="outlined"
+                          v-model="imageFile2"
+                          :rules="imageRules2"
+                          clearable
+                          show-size
+                          :hint="t('createStorePage.imageHintOptional')"
+                          persistent-hint
+                        />
+                        <div v-if="selectedImagePreview2" class="image-preview-container mt-4">
+                          <v-img :src="selectedImagePreview2" class="rounded-lg elevation-2" aspect-ratio="1.7" cover />
+                        </div>
+                        <div v-else class="no-image-placeholder">
+                          <v-icon size="80" color="grey-lighten-2">mdi-image-off-outline</v-icon>
+                          <p class="text-caption text-grey-lighten-1 mt-2">{{ t('createStorePage.noImage2Selected') }}</p>
+                        </div>
+                      </v-col>
+
+                      <v-col cols="12">
+                        <v-row>
+                          <v-col cols="12" sm="6">
+                            <v-text-field
+                              v-model="name"
+                              :label="t('createStorePage.nameLabel')"
+                              type="text"
+                              variant="outlined"
+                              :rules="[
+                                v => !!v || t('createStorePage.nameRequired'),
+                                v => v.length >= 3 || t('createStorePage.minChars', { count: 3 })
+                              ]"
+                              prepend-inner-icon="mdi-store"
+                              class="mb-4"
+                            />
+                            <v-text-field
+                              v-model="category"
+                              :label="t('createStorePage.categoryLabel')"
+                              type="text"
+                              variant="outlined"
+                              :rules="[
+                                v => !!v || t('createStorePage.categoryRequired'),
+                                v => v.length >= 3 || t('createStorePage.minChars', { count: 3 })
+                              ]"
+                              prepend-inner-icon="mdi-tag"
+                              class="mb-4"
+                            />
+                            <v-text-field
+                              v-model="location"
+                              :label="t('createStorePage.locationLabel')"
+                              type="text"
+                              variant="outlined"
+                              :rules="[
+                                v => !!v || t('createStorePage.locationRequired'),
+                                v => v.length >= 3 || t('createStorePage.minChars', { count: 3 })
+                              ]"
+                              prepend-inner-icon="mdi-map-marker"
+                              class="mb-4"
+                            />
+                          </v-col>
+                          <v-col cols="12" sm="6">
+                            <v-text-field
+                              v-model="contact"
+                              :label="t('createStorePage.contactLabel')"
+                              type="tel"
+                              variant="outlined"
+                              :rules="[
+                                v => !!v || t('createStorePage.contactRequired'),
+                                v => /^\d{9,}$/.test(v) || t('createStorePage.contactMinDigits', { count: 9 })
+                              ]"
+                              prepend-inner-icon="mdi-phone"
+                              class="mb-4"
+                            />
+                            <v-textarea
+                              v-model="description"
+                              :label="t('createStorePage.descriptionLabel')"
+                              variant="outlined"
+                              :rules="[v => !!v || t('createStorePage.descriptionRequired')]"
+                              prepend-inner-icon="mdi-text-box-outline"
+                              rows="5"
+                              auto-grow
+                            />
+                          </v-col>
+                        </v-row>
+                      </v-col>
+                    </v-row>
+                  </v-form>
+                </v-card-text>
+              </v-card>
+              <v-responsive class="text-center py-5">
+                <v-btn type="submit" :loading="isSubmitting" :disabled="!canUserCreateStore" color="primary" size="large">
+                  {{ t('createStorePage.createStoreButton') }} &nbsp;&nbsp;<v-icon>mdi-content-save-outline</v-icon>
                 </v-btn>
               </v-responsive>
-            </form>
-            <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="snackbarTimeout" location="bottom right">
-                {{ snackbarMessage }}
-            </v-snackbar>
-            <FooterComponent/>
-          </v-main>
-        </v-layout>
-      </v-card>
-    </v-app>
-  </template>
-  
-  <script setup>
-  import { ref, onMounted } from 'vue';
-  import { useRouter } from 'vue-router';
-  import axios from '@/axios'; // Assuming you have an axios instance configured
-  import { computed } from 'vue';
-  
-  const formattedDate = computed(() => {
-    const date = new Date();
-    const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const day = daysOfWeek[date.getDay()];   
-  
-    const formattedDateString = date.toLocaleDateString();
-  
-    return `${day}, ${formattedDateString}`;
-  });
-  
-  const selectedImage = ref(null);
-  const loading = ref(false);
-  const snackbar = ref(false);
-  const snackbarMessage = ref('');
-  const snackbarColor = ref('');
-  const name = ref('');
-  const category = ref('');
-  const location = ref('');
-  const contact = ref('');
-  const description = ref('');
-  const image = ref("images");
-  
-  const onFileSelected = (event) => {
-    const file = event.target.files[0];
-  
-    if (file) {
+            </v-container>
+          </form>
+          <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="snackbarTimeout" location="top right">
+            {{ snackbarMessage }}
+          </v-snackbar>
+          <AppFooter />
+        </v-main>
+      </v-layout>
+    </v-card>
+
+    <v-overlay :model-value="isGlobalLoading" class="align-center justify-center" persistent>
+      <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+      <p class="my-1 text-h6 text-white">{{ t('createStorePage.loading') }}</p>
+    </v-overlay>
+  </v-app>
+</template>
+
+<script lang="ts" setup>
+import { ref, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import axios from '@/axios';
+import { useLoader } from '@/useLoader';
+import { useI18n } from 'vue-i18n'; // Import useI18n
+
+// --- Component Imports ---
+import SideBarComponent from '@/components/SideBarComponent.vue';
+import HeaderComponent from '@/components/HeaderComponent.vue';
+import AppFooter from '@/components/AppFooter.vue';
+
+// --- Composables and Utilities ---
+const router = useRouter();
+const { startLoading, stopLoading, isLoading: isGlobalLoading } = useLoader();
+const { t, locale } = useI18n(); // Initialize useI18n
+
+// --- Reactive State ---
+const name = ref<string>('');
+const category = ref<string>('');
+const location = ref<string>('');
+const contact = ref<string>('');
+const description = ref<string>('');
+
+const imageFile1 = ref<File[] | null>(null);
+const selectedImagePreview1 = ref<string | null>(null);
+
+const imageFile2 = ref<File[] | null>(null);
+const selectedImagePreview2 = ref<string | null>(null);
+
+const isSubmitting = ref<boolean>(false);
+
+const snackbar = ref<boolean>(false);
+const snackbarMessage = ref<string>('');
+const snackbarColor = ref<string>('');
+const snackbarTimeout = 3000;
+
+const storeCount = ref<number | null>(null); // To store how many stores the user currently has
+const userStoreLimit = ref<number | null>(null); // To store the maximum limit from user profile
+
+// Correctly type the ref for a Vuetify v-form component
+const storeForm = ref<InstanceType<typeof import('vuetify/components')['VForm']> | null>(null);
+
+// --- Computed Properties ---
+const formattedDate = computed(() => {
+  const date = new Date();
+  const options: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  // Use the current locale for date formatting
+  return date.toLocaleDateString(locale.value, options);
+});
+
+
+// Common image validation logic
+const commonImageValidation = (v: File[] | null, isRequired: boolean) => {
+  if (!v || v.length === 0) {
+    return isRequired ? t('createStorePage.imageRequired') : true;
+  }
+  const file = v[0];
+  const maxSize = 2 * 1024 * 1024; // 2 MB
+  const allowedTypes = ['image/png', 'image/jpeg', 'image/bmp'];
+
+  if (!allowedTypes.includes(file.type)) {
+    return t('createStorePage.imageInvalidType');
+  }
+  if (file.size > maxSize) {
+    return t('createStorePage.imageTooLarge');
+  }
+  return true;
+};
+
+const imageRules1 = computed(() => {
+  return [
+    (v: File[] | null) => commonImageValidation(v, true) // Image 1 is required
+  ];
+});
+
+const imageRules2 = computed(() => {
+  return [
+    (v: File[] | null) => commonImageValidation(v, false) // Image 2 is optional
+  ];
+});
+
+// Computed property to determine if the user can create a store
+const canUserCreateStore = computed<boolean>(() => {
+  // If storeCount or userStoreLimit are not yet loaded, assume false to disable button by default
+  if (storeCount.value === null || userStoreLimit.value === null) {
+    return false;
+  }
+  return storeCount.value < userStoreLimit.value;
+});
+
+// --- Methods ---
+function showSnackbar(message: string, color: string) {
+  snackbarMessage.value = message;
+  snackbarColor.value = color;
+  snackbar.value = true;
+}
+
+// Handler for the first image input
+const onFileSelected1 = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const files = input.files;
+  if (files && files.length > 0) {
+    const file = files[0];
+    const validationResult = commonImageValidation([file], true);
+    if (typeof validationResult === 'string') {
+      showSnackbar(validationResult, 'error');
+      imageFile1.value = null;
+      selectedImagePreview1.value = null;
+    } else {
+      imageFile1.value = [file];
       const reader = new FileReader();
-  
-      reader.onload = (event) => {
-        selectedImage.value = event.target.result;
+      reader.onload = (e) => {
+        selectedImagePreview1.value = e.target?.result as string;
       };
-  
       reader.readAsDataURL(file);
     }
-  };
-  
-  const CreateStore = async () => {
-    loading.value = true;
-    console.log(selectedImage)
-    try {
-      const formData = new FormData();
-      formData.append('name', name.value);
-      formData.append('category', category.value);
-      formData.append('location', location.value);
-      formData.append('contact', contact.value);
-      formData.append('description', description.value);
-      formData.append('image', image.value);
+  } else {
+    imageFile1.value = null;
+    selectedImagePreview1.value = null;
+  }
+};
 
-      const token =localStorage.getItem('access_token')
-      const response = await axios.post('/api/stores/create-store', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`
-        },
-      });
-  
-      if (response.status === 201) {
-        // Store created successfully
-        console.log('Store created successfully:', response.data.stores);
-        snackbar.value = true;
-        snackbarMessage.value = response.data.success || 'Store created successfully!';
-        snackbarColor.value = 'success';
-        setTimeout(() => router.push('/create-store'), 2000);
-        // Optionally, redirect to a success page or display a success message
-  
-        // Create the store folder
-        // const storeFolderName = name.value.replace(/\s+/g, '_').toLowerCase(); // Replace spaces with underscores
-        // const storeFolderPath = `assets/store/${storeFolderName}/images/`; // Replace with your desired path
-  
-        // try {
-        //   await fs.promises.mkdir(storeFolderPath, { recursive: true }); // Create the folder recursively
-        //   console.log('Store folder created successfully:', storeFolderPath);
-  
-        //   // Save the image to the folder
-        //   const imageFileName = Date.now() + '_' + file.name; // Generate a unique filename
-        //   const imageFilePath = `${storeFolderPath}/images/${imageFileName}`;
-  
-        //   await fs.promises.writeFile(imageFilePath, selectedImage.value.replace(/^data:image\/png;base64,/, ''));
-        //   console.log('Image saved successfully:', imageFilePath);
-        // } catch (folderError) {
-        //   console.error('Error creating store folder:', folderError);
-        //   // Handle folder creation error
-        // }
-      } else {
-        console.error('Error creating store:', response.data);
-        snackbar.value = true;
-        snackbarMessage.value = response.data.error || 'An error occurred while creating the store.';
-        snackbarColor.value = 'error';
-      }
-    } catch (error) {
-      console.error('Error creating store:', error);
-      snackbar.value = true;
-      snackbarMessage.value = 'An unexpected error occurred.';
-      snackbarColor.value = 'error';
-    } finally {
-      loading.value = false;
+// Handler for the second image input
+const onFileSelected2 = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const files = input.files;
+  if (files && files.length > 0) {
+    const file = files[0];
+    const validationResult = commonImageValidation([file], false);
+    if (typeof validationResult === 'string') {
+      showSnackbar(validationResult, 'error');
+      imageFile2.value = null;
+      selectedImagePreview2.value = null;
+    } else {
+      imageFile2.value = [file];
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        selectedImagePreview2.value = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
     }
-  };
-  </script>
+  } else {
+    imageFile2.value = null;
+    selectedImagePreview2.value = null;
+  }
+};
+
+// Function to fetch the user's current store count
+async function fetchStoreCount() {
+  try {
+    const response = await axios.get('/api/stores'); // Assumes this returns an array of stores for the authenticated user
+    storeCount.value = response.data.stores.length;
+    console.log('User currently owns', storeCount.value, 'store(s).');
+  } catch (error: any) {
+    console.error('Error fetching store count:', error);
+    storeCount.value = 0; // Default to 0 on error, allowing creation if limit isn't set/fetched
+    showSnackbar(t('createStorePage.fetchStoreCountError'), 'error');
+  }
+}
+
+// Function to fetch user profile (including store_limit)
+async function fetchUserProfile() {
+  try {
+    const token = sessionStorage.getItem('access_token');
+    if (!token) {
+      console.warn('No access token found. User not authenticated.');
+      router.push('/login'); // Redirect to login if no token
+      return;
+    }
+
+    const response = await axios.get('/api/me', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    // Assuming response.data.user contains store_limit
+    if (response.data && response.data.user && typeof response.data.user.store_limit === 'number') {
+      userStoreLimit.value = response.data.user.store_limit;
+      console.log('User store limit fetched:', userStoreLimit.value);
+    } else {
+      console.warn('store_limit not found or invalid in user profile response. Defaulting to 1.');
+      userStoreLimit.value = 1; // Default to 1 if not found
+    }
+  } catch (error: any) {
+    console.error('Error fetching user profile:', error);
+    userStoreLimit.value = 1; // Default to 1 on error
+    showSnackbar(t('createStorePage.fetchProfileError'), 'error');
+  }
+}
+
+const createStore = async () => {
+  console.log('--- createStore initiated ---');
+  isSubmitting.value = true;
+
+  if (!storeForm.value) {
+    console.error('ERROR: Form reference (storeForm) is null. Cannot validate form.');
+    showSnackbar(t('createStorePage.formInitError'), 'error');
+    isSubmitting.value = false;
+    return;
+  }
+
+  const { valid } = await storeForm.value.validate();
+
+  if (!valid) {
+    console.log('FORM VALIDATION FAILED: Please correct the form errors.');
+    showSnackbar(t('createStorePage.formValidationFailed'), 'error');
+    isSubmitting.value = false;
+    return;
+  }
+  console.log('FORM VALIDATION PASSED.');
+
+  if (!imageFile1.value || imageFile1.value.length === 0) {
+    console.log('IMAGE 1 VALIDATION FAILED: No image file 1 selected.');
+    showSnackbar(t('createStorePage.image1RequiredError'), 'error');
+    isSubmitting.value = false;
+    return;
+  }
+  console.log('IMAGE FILE VALIDATION PASSED.');
+
+  // Check permission again just before submission
+  if (!canUserCreateStore.value) {
+    showSnackbar(t('createStorePage.storeLimitReached', { limit: userStoreLimit.value }), 'warning');
+    isSubmitting.value = false;
+    return;
+  }
+  console.log('User is allowed to create a store based on current limit checks.');
+
+  startLoading();
+  console.log('Global loading overlay activated.');
+
+  try {
+    const token = sessionStorage.getItem('access_token');
+    if (!token) {
+      console.warn('Authentication token missing. Redirecting to login.');
+      showSnackbar(t('createStorePage.authRequired'), 'error');
+      router.push('/login');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('name', name.value);
+    formData.append('category', category.value);
+    formData.append('location', location.value);
+    formData.append('contact', contact.value);
+    formData.append('description', description.value);
+
+    if (imageFile1.value && imageFile1.value[0]) {
+      formData.append('image1', imageFile1.value[0]);
+    }
+    if (imageFile2.value && imageFile2.value[0]) {
+      formData.append('image2', imageFile2.value[0]);
+    }
+
+    console.log('Sending API POST request to /api/stores/create-store...');
+    const response = await axios.post('/api/stores/create-store', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${token}`
+      },
+    });
+
+    if (response.status === 201) {
+      console.log('API RESPONSE SUCCESS (201 CREATED):', response.data);
+      showSnackbar(response.data.success || t('createStorePage.creationSuccess'), 'success');
+
+      // Reset form fields
+      name.value = '';
+      category.value = '';
+      location.value = '';
+      contact.value = '';
+      description.value = '';
+      imageFile1.value = null;
+      selectedImagePreview1.value = null;
+      imageFile2.value = null;
+      selectedImagePreview2.value = null;
+
+      if (storeForm.value) {
+        storeForm.value.resetValidation();
+        storeForm.value.reset();
+      }
+
+      // Re-fetch store count to update the canUserCreateStore status
+      await fetchStoreCount();
+      console.log('Store created. Updated store count for permission check.');
+
+
+      // Redirect after a slight delay for snackbar visibility
+      setTimeout(() => {
+        router.push('/store');
+      }, 2000);
+    } else {
+      console.error(`API ERROR: Unexpected response status ${response.status}`, response.data);
+      showSnackbar(response.data.error || t('createStorePage.creationUnexpectedError'), 'error');
+    }
+  } catch (apiError: any) {
+    console.error('API CALL FAILED:', apiError);
+    if (axios.isAxiosError(apiError) && apiError.response) {
+      const errorData = apiError.response.data;
+      if (apiError.response.status === 422 && errorData.errors) {
+        let errorMessage = t('createStorePage.validationErrors');
+        for (const key in errorData.errors) {
+          if (errorData.errors.hasOwnProperty(key)) {
+            errorMessage += `\n- ${errorData.errors[key].join(', ')}`;
+          }
+        }
+        showSnackbar(errorMessage, 'error');
+      } else if (errorData.message) {
+        showSnackbar(t('createStorePage.apiErrorWithMessage', { message: errorData.message }), 'error');
+      } else if (errorData.error) {
+        showSnackbar(t('createStorePage.apiErrorWithError', { error: errorData.error }), 'error');
+      } else {
+        showSnackbar(t('createStorePage.apiErrorStatus', { status: apiError.response.status, statusText: apiError.response.statusText || 'Unknown error' }), 'error');
+      }
+    } else if (apiError.request) {
+      showSnackbar(t('createStorePage.networkError'), 'error');
+    } else {
+      showSnackbar(t('createStorePage.clientSideError'), 'error');
+    }
+  } finally {
+    isSubmitting.value = false;
+    stopLoading();
+    console.log('--- createStore finished. Global loading deactivated. ---');
+  }
+};
+
+// --- Lifecycle Hooks ---
+onMounted(async () => {
+  startLoading();
+  console.log('ONMOUNTED: Initializing... Fetching stores count and user store limit.');
+  try {
+    const token = sessionStorage.getItem('access_token');
+    if (!token) {
+      console.warn('ONMOUNTED: No authentication token found. Redirecting to login.');
+      router.push('/login');
+      stopLoading();
+      return;
+    }
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+    // Fetch both simultaneously
+    await Promise.all([
+      fetchStoreCount(),
+      fetchUserProfile()
+    ]);
+
+    // After both values are loaded, check if the user is over their limit
+    if (storeCount.value !== null && userStoreLimit.value !== null) {
+      if (storeCount.value >= userStoreLimit.value) {
+        showSnackbar(t('createStorePage.storeLimitReachedOnLoad', { limit: userStoreLimit.value }), 'warning');
+        console.log(`ONMOUNTED: User is at or over limit: ${storeCount.value}/${userStoreLimit.value}.`);
+      } else {
+        console.log(`ONMOUNTED: User can create stores: ${storeCount.value}/${userStoreLimit.value}.`);
+      }
+    }
+
+  } catch (error: any) {
+    console.error('ONMOUNTED ERROR: Failed during initial data fetch:', error);
+    if (axios.isAxiosError(error) && error.response && error.response.status === 401) {
+      showSnackbar(t('createStorePage.authFailedOnLoad'), 'error');
+      router.push('/login');
+    } else {
+      showSnackbar(t('createStorePage.initialDataLoadFailed'), 'error');
+    }
+  } finally {
+    stopLoading();
+    console.log('ONMOUNTED: Initialization complete. Global loading deactivated.');
+  }
+});
+</script>
+
+<style scoped>
+.custom-border-card {
+  border-color: rgba(128, 128, 128, 0.3) !important;
+  border-width: 1px !important;
+  border-style: solid !important;
+}
+
+.image-preview-container {
+  min-height: fit-content;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f5f5f5;
+  border-radius: 5px;
+}
+
+.no-image-placeholder {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 200px; /* Adjusted height for better fit with two image cards */
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  border: 1px dashed #ccc;
+  color: #aaa;
+}
+
+/* Ensure text fields have consistent bottom margin */
+.v-text-field {
+  margin-bottom: 16px;
+}
+</style>
