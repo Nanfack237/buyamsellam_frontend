@@ -31,7 +31,7 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const token = sessionStorage.getItem('access_token');
   if (!token && to.path !== '/login') {
-    next({ name: 'Login' }); // Redirect to login view
+    next({ path: 'login' }); // Redirect to login view
     return;
   }
   next();

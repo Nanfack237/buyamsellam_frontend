@@ -24,8 +24,7 @@
       </v-btn>
 
       <v-menu>
-        <template v-slot:activator="{ props }">
-          <v-btn v-bind="props" class="mx-2" :title="$t('toggleLanguage')">
+        <template v-slot:activator="{ props: menuProps }"> <v-btn v-bind="menuProps" class="mx-2" :title="$t('toggleLanguage')">
             <i :class="currentFlagClass" class="fi fis"></i>
             <span class="font-weight-bold ml-2">{{ i18nLocale.toUpperCase() }}</span>
           </v-btn>
@@ -94,11 +93,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, defineProps, defineEmits } from 'vue';
+import { ref, computed, defineEmits } from 'vue'; // Removed defineProps, as it's not used directly anymore
 import axios from '@/axios';
 import { useRouter } from 'vue-router';
 import { useLocale } from 'vuetify';
-import { useLoader } from '@/useLoader';
+
 import { useCartStore } from '@/stores/cartStore';
 import { useI18n } from 'vue-i18n';
 
@@ -129,21 +128,13 @@ interface Product {
   stock_id: number | null;
 }
 
-const props = defineProps({
-  // The 'products' array is passed down from ProductView to HeaderComponent
-  // so HeaderComponent can pass it to CartDialog.
-  products: {
-    type: Array as () => Product[],
-    required: true
-  },
-  // storeIdProp is provided in the props, but in this specific setup,
-  // the cart button visibility is no longer tied to it.
-  // It can remain if other parts of your application or parent component use it.
-  storeIdProp: {
-    type: [String, null],
-    default: null
-  }
-});
+// Define props for this component - destructure directly to resolve TS6133
+interface CashierHeaderProps {
+  products: Product[]; // This prop is now correctly defined
+}
+
+const { products } = defineProps<CashierHeaderProps>(); // Fix: Destructure 'products' directly
+
 
 // HeaderComponent will re-emit the 'sale-completed' event up to its parent (ProductView)
 // NOW ALSO RE-EMITTING 'refresh-products'
@@ -152,7 +143,6 @@ const emit = defineEmits<{
   (e: 'refresh-products'): void; // NEW: Declare this emit
 }>();
 
-const { startLoading, stopLoading } = useLoader();
 const router = useRouter();
 
 const { locale: i18nLocale, t } = useI18n(); // Destructure t for use in script
@@ -177,12 +167,6 @@ function showSnackbar(message: string, color: string) {
   snackbarColor.value = color;
   snackbar.value = true;
 }
-
-// This computed property is no longer used for the cart button,
-// but can be kept if `storeIdProp` is used elsewhere for conditional rendering.
-const isStoreSelected = computed(() => {
-  return props.storeIdProp !== null && props.storeIdProp !== undefined && props.storeIdProp !== '';
-});
 
 // Computed property to determine the current flag class for the language button
 const currentFlagClass = computed(() => {
@@ -256,7 +240,7 @@ const confirmLogout = async () => {
     sessionStorage.removeItem('userRole');
     sessionStorage.removeItem('storeId');
     sessionStorage.removeItem('userEmail');
-    localStorage.removeItem('reauthenticateDialogActive'); // <-- CHANGED
+    localStorage.removeItem('reauthenticateDialogActive');
 
     cartStore.clearCart();
     logoutLoading.value = false;

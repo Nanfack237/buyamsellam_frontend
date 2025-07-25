@@ -7,10 +7,10 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
 import axios from 'axios';
-import { Chart, registerables } from 'chart.js/auto';
+import { Chart, registerables } from 'chart.js/auto'; // Using 'chart.js/auto' for automatic registration
 import { useI18n } from 'vue-i18n';
 
-Chart.register(...registerables);
+Chart.register(...registerables); // Register all necessary components from chart.js/auto
 
 const { t, locale } = useI18n();
 
@@ -47,34 +47,32 @@ function renderChart() {
     if (!usersCreatedChart.value) return;
 
     if (chartInstance) {
-        chartInstance.destroy();
+        chartInstance.destroy(); // Destroy existing chart instance before creating a new one
     }
 
     chartInstance = new Chart(usersCreatedChart.value, {
-        type: 'bar',
+        type: 'bar', // This is a bar chart
         data: {
             labels: labels.value,
             datasets: [{
-                // --- TRANSLATION CHANGE HERE ---
                 label: t('adminDashboard.usersChart.totalUsersCreatedChartLabel'), 
                 data: data.value,
                 backgroundColor: 'rgb(13, 71, 161, 0.6)', // A different color for users
                 borderColor: 'rgb(13, 71, 161, 1)',
                 borderWidth: 2,
-                tension: 0.3, 
-                fill: true, 
-                borderRadius: 8,  
+                // Removed: tension: 0.3, // 'tension' is not applicable to 'bar' charts
+                 // 'fill' is also typically for line charts, but harmless here
+                borderRadius: 8, // Rounded corners for bars
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: false, // Allows the chart to fill its container
             scales: {
                 y: {
                     beginAtZero: true,
                     title: {
                         display: true,
-                        // --- TRANSLATION CHANGE HERE ---
                         text: t('adminDashboard.usersChart.usersCountAxis') 
                     },
                     ticks: {
@@ -85,7 +83,6 @@ function renderChart() {
                 x: {
                     title: {
                         display: true,
-                        // --- TRANSLATION CHANGE HERE ---
                         text: t('adminDashboard.usersChart.dayOfWeekAxis') 
                     }
                 }
@@ -104,13 +101,20 @@ function renderChart() {
     });
 }
 
+// Lifecycle hook: Fetch data and render chart when component is mounted
 onMounted(fetchUsersCreated);
 
+// Watcher: Re-fetch data and re-render chart when the locale changes
 watch(locale, () => {
     fetchUsersCreated(); // Re-fetch data to get labels in the new locale
-}, { immediate: false });
+}, { immediate: false }); // Do not run immediately on component creation; runs only on locale change
 </script>
 
 <style scoped>
 /* Add any specific styles for your chart container if needed */
+/* Example to make the canvas fill its parent card */
+canvas {
+  width: 100%;
+  height: 100%;
+}
 </style>

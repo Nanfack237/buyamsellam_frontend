@@ -302,11 +302,11 @@ const lastSaleReceiptId = ref('');
 const managerEmail = ref<string | null>(null);
 
 // --- Computed Properties ---
-const formattedDate = computed(() => {
-  const date = new Date();
-  const options: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  return date.toLocaleDateString(locale.value, options);
-});
+// const formattedDate = computed(() => {
+//   const date = new Date();
+//   const options: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+//   return date.toLocaleDateString(locale.value, options);
+// });
 
 const datePrint = computed(() => {
   const date = new Date();

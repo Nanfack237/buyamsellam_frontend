@@ -120,7 +120,8 @@
                       class="mb-0"
                     />
                   </v-col>
-                  <v-col cols="12"> <v-select
+                  <v-col cols="12">
+                    <v-select
                       v-model="payment_method"
                       :label="$t('saleTransaction.paymentMethodLabel')"
                       :items="[
@@ -134,7 +135,7 @@
                       :rules="[v => !!v || $t('saleTransaction.validation.paymentMethodRequired')]"
                       prepend-inner-icon="mdi-credit-card"
                       density="comfortable"
-                      class=" mb-4"
+                      class="mb-4"
                     />
                   </v-col>
                 </v-row>
@@ -169,13 +170,13 @@
 <script lang="ts" setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from '@/axios'; // Ensure this path is correct for your project
+import axios from '@/axios';
 import SideBarComponent from '@/components/SideBarComponent.vue';
 import HeaderComponent from '@/components/HeaderComponent.vue';
 import AppFooter from '@/components/AppFooter.vue';
-import { useI18n } from 'vue-i18n'; // Import useI18n
+import { useI18n } from 'vue-i18n';
 
-const { t, locale } = useI18n(); // Use i18n
+const { t, locale } = useI18n();
 
 // --- Interfaces ---
 interface ProductItem {
@@ -188,20 +189,17 @@ interface StockItem {
   product_id: number;
   cost_price: number;
   quantity: number;
-  // product_name is NOT directly stored on StockItem according to your clarification.
-  // It's looked up via product_id from ProductItem.
 }
 
 interface CostPriceOption {
   label: string;
-  value: number | null; // Value can be null for "not in stock"
+  value: number | null;
 }
 
-// Interface for sale receipt item, as expected by sendReceiptToManager
 interface SaleReceiptItem {
   product: {
     id: number;
-    name: string; // This will now always be a string from productLists
+    name: string;
   };
   quantity: number;
   priceAtSale: number;
@@ -230,7 +228,7 @@ const snackbarColor = ref('');
 const snackbarTimeout = 3000;
 
 const router = useRouter();
-const saleForm = ref<HTMLFormElement | null>(null); // Ref for the v-form component
+const saleForm = ref<HTMLFormElement | null>(null);
 
 // --- Refs for Manager/Store Info (will be populated dynamically) ---
 const managerEmail = ref<string | null>(null);
@@ -290,7 +288,7 @@ watch(selectedProduct, (newVal, oldVal) => {
 // Watch selectedStockId to potentially auto-fill selling price or quantity hints
 watch(selectedStockId, (newVal) => {
   if (newVal !== null) {
-    const stock = stockLists.value.find(s => s.id === newVal);
+    // const stock = stockLists.value.find(s => s.id === newVal); // 'stock' is no longer causing TS6133 error.
     // You might want to pre-fill sellingPrice based on stock's cost_price or a default if applicable
     // Example: sellingPrice.value = stock ? stock.cost_price * 1.2 : null; // 20% markup example
   }
@@ -304,14 +302,12 @@ function showSnackbar(message: string, color: string) {
   snackbar.value = true;
 }
 
-// Function to get the full URL for an image.
-// You need to implement this based on your backend storage configuration (e.g., Laravel's storage link).
 function getImageUrl(path: string): string {
   // IMPORTANT: Adjust this URL based on your Laravel backend's public storage setup.
   // Example for Laravel storage link:
-  // return `${axios.defaults.baseURL}/storage/${path}`;
+  return `${axios.defaults.baseURL}/storage/${path}`;
   // Or if the logo path is already a full URL:
-  return path;
+  // return path;
 }
 
 function generateUniqueReceiptId(): string {
@@ -324,9 +320,10 @@ function generateUniqueReceiptId(): string {
   return result;
 }
 
-const getReceiptId = computed(() => {
-  return lastSaleReceiptId.value || 'N/A';
-});
+// `getReceiptId` was removed as it was unused. If you need it for display, uncomment and use it in the template.
+// const getReceiptId = computed(() => {
+//   return lastSaleReceiptId.value || 'N/A';
+// });
 
 // --- API Fetching Methods ---
 
@@ -385,7 +382,7 @@ async function fetchUser() {
         }
     } catch (error) {
         console.error('Error fetching current user details:', error);
-        showSnackbar(t('saleTransaction.snackbar.fetchUserDetailsError'), 'error'); // Add this i18n key
+        showSnackbar(t('saleTransaction.snackbar.fetchUserDetailsError'), 'error');
         userName.value = 'Cashier'; // Fallback
     }
 }
@@ -411,7 +408,7 @@ async function fetchManagerEmail(managerId: number) {
   } catch (error) {
     console.error('Error fetching manager email for ID:', managerId, error);
     managerEmail.value = null;
-    showSnackbar(t('saleTransaction.snackbar.fetchManagerEmailError'), 'error'); // Add this i18n key
+    showSnackbar(t('saleTransaction.snackbar.fetchManagerEmailError'), 'error');
   }
 }
 
@@ -425,12 +422,12 @@ async function fetchStoreDetails() {
   const token = sessionStorage.getItem('access_token');
   try {
     if (!token) {
-      showSnackbar(t('saleTransaction.snackbar.authRequiredStoreDetails'), 'error'); // Add this i18n key
+      showSnackbar(t('saleTransaction.snackbar.authRequiredStoreDetails'), 'error');
       return;
     }
     if (!storeId) {
       console.warn('Store ID not found in session storage. Cannot fetch store details.');
-      showSnackbar(t('saleTransaction.snackbar.storeIdMissing'), 'warning'); // Add this i18n key
+      showSnackbar(t('saleTransaction.snackbar.storeIdMissing'), 'warning');
       return;
     }
 
@@ -455,12 +452,12 @@ async function fetchStoreDetails() {
       }
     } else {
       console.warn('Store data not found in the response:', response.data);
-      showSnackbar(t('saleTransaction.snackbar.storeDataNotFound'), 'warning'); // Add this i18n key
+      showSnackbar(t('saleTransaction.snackbar.storeDataNotFound'), 'warning');
     }
 
   } catch (error) {
     console.error('Error fetching store details:', error);
-    showSnackbar(t('saleTransaction.snackbar.fetchStoreDetailsError'), 'error'); // Add this i18n key
+    showSnackbar(t('saleTransaction.snackbar.fetchStoreDetailsError'), 'error');
   }
 }
 
@@ -490,7 +487,7 @@ async function sendReceiptToManager(items: SaleReceiptItem[], total: number, cus
       cashier_name: userName.value,
       sale_date: new Date().toLocaleDateString(currentLocale),
       items: items.map(item => ({
-        name: item.product.name, // This will now correctly use the product name
+        name: item.product.name,
         quantity: item.quantity,
         unit_price: item.priceAtSale,
         total_price: item.totalItemPrice,
@@ -598,7 +595,6 @@ const submitSale = async () => {
     if (response.data.success) {
       showSnackbar(t('saleTransaction.snackbar.saleSuccess', { remaining: response.data.quantity_remaining }), 'success');
 
-      // --- CORRECTED LOGIC FOR PRODUCT NAME IN RECEIPT ---
       const productDetailsForReceipt = productLists.value.find(
         p => p.id === selectedProduct.value
       );
@@ -606,7 +602,6 @@ const submitSale = async () => {
       const soldItem: SaleReceiptItem = {
         product: {
           id: selectedProduct.value!,
-          // Get name from productLists, which has the product name
           name: productDetailsForReceipt ? productDetailsForReceipt.name : 'Product Name Not Found',
         },
         quantity: quantity.value!,
@@ -614,15 +609,13 @@ const submitSale = async () => {
         totalItemPrice: sellingPrice.value! * quantity.value!,
       };
 
-      // Call sendReceiptToManager after successful sale
       await sendReceiptToManager(
-        [soldItem], // Pass as an array, even for a single item sale
+        [soldItem],
         soldItem.totalItemPrice,
         customerName.value,
         lastSaleReceiptId.value
       );
 
-      // Reset form fields after successful submission and receipt sending attempt
       selectedProduct.value = null;
       selectedStockId.value = null;
       sellingPrice.value = null;
@@ -631,11 +624,13 @@ const submitSale = async () => {
       customerContact.value = '';
       payment_method.value = '';
       if (saleForm.value) {
-          (saleForm.value as any).resetValidation(); // Reset validation state
+          (saleForm.value as any).resetValidation();
       }
 
-      // Important: Re-fetch stocks to get updated quantities
-      await fetchStocks();
+      setTimeout(() => {
+        router.push('/sale'); // Consider redirecting to a sales history or dashboard page
+      }, 2000);
+      await fetchStocks(); // Important: Re-fetch stocks to get updated quantities
 
     } else {
       showSnackbar(response.data.error || response.data.message || t('commonSaleTransactionVue.snackbar.unknownError'), 'error');
@@ -662,12 +657,11 @@ const submitSale = async () => {
 // --- Lifecycle Hook ---
 onMounted(async () => {
   isDataLoaded.value = false;
-  // Fetch all necessary data concurrently
   await Promise.all([
     fetchProducts(),
     fetchStocks(),
-    fetchStoreDetails(), // This also fetches manager email
-    fetchUser(),        // Fetches cashier's name (userName)
+    fetchStoreDetails(),
+    fetchUser(),
   ]);
   isDataLoaded.value = true;
 });

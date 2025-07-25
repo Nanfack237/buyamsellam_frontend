@@ -9,7 +9,8 @@
           <v-row justify="space-between" class="d-flex justify-center py-5 px-5 pb-2">
             <v-col cols="auto" class="">
               <p class="text-high-emphasis text-h6 " style="color: #0D47A1;">
-                {{ $t('dashboardTitle') }} </p>
+                {{ $t('dashboardTitle') }}
+              </p>
             </v-col>
 
             <v-col cols="auto">
@@ -133,9 +134,9 @@
             </v-card>
           </v-row>
 
-          <v-row cols="12" class="px-4 py-2 my-4" align="stretch" style="height: max-content;"> 
-            <v-col cols="12" md="6" sm="12" class="py-3 mb-0 d-flex" > 
-              <v-card elevation="4" class="flex-grow-1 " > 
+          <v-row cols="12" class="px-4 py-2 my-4" align="stretch" style="height: max-content;">
+            <v-col cols="12" md="6" sm="12" class="py-3 mb-0 d-flex" >
+              <v-card elevation="4" class="flex-grow-1 " >
                 <v-card-item >
                   <p class="font-weight-medium py-2 my-0">
                     {{ $t('profitPerDay') }}
@@ -148,8 +149,8 @@
               </v-card>
             </v-col>
 
-            <v-col cols="12" md="3" sm="6" class="d-flex"> 
-              <v-card elevation="4" class="flex-grow-1"> 
+            <v-col cols="12" md="3" sm="6" class="d-flex">
+              <v-card elevation="4" class="flex-grow-1">
                 <v-card-item >
                   <p class="font-weight-medium py-2">
                     {{ $t('topProduct') }}
@@ -162,8 +163,8 @@
               </v-card>
             </v-col>
 
-            <v-col cols="12" md="3" sm="6" class="d-flex"> 
-              <v-card elevation="4" class="flex-grow-1" > 
+            <v-col cols="12" md="3" sm="6" class="d-flex">
+              <v-card elevation="4" class="flex-grow-1" >
                 <v-card-item >
                   <p class="font-weight-medium py-2">
                     {{ $t('topCustomer') }}
@@ -194,12 +195,20 @@ import { useRouter } from 'vue-router';
 import axios from '@/axios'; // Assuming you have an axios instance configured
 import { useLoader } from '@/useLoader';
 import { useI18n } from 'vue-i18n'; // Import useI18n for translations
+import SideBarComponent from '@/components/SideBarComponent.vue';
+import HeaderComponent from '@/components/HeaderComponent.vue';
+import AppFooter from '@/components/AppFooter.vue';
+import ChartByExpenses from '@/components/ChartByExpenses.vue';
+import ChartBySales from '@/components/ChartBySales.vue';
+import ChartByProfit from '@/components/ChartByProfit.vue';
 
+import type { VDataTable } from 'vuetify/components';
 // --- Composables and Utilities ---
 const { startLoading, stopLoading } = useLoader(); // Assuming this manages a global loading state or similar
 const { t, locale } = useI18n(); // Destructure t and locale from useI18n
 
 const router = useRouter();
+
 // --- Reactive State ---
 const totalStockQtty = ref<number | null>(null);
 const totalPurchasePerDa = ref<number | null>(null);
@@ -209,15 +218,26 @@ const topProducts = ref<any[]>([]);
 const topCustomers = ref<any[]>([]);
 const isDataLoaded = ref(false); // Flag to control rendering and overlay visibility
 
+type VDataTableInternalHeaders = NonNullable<VDataTable['$props']['headers']>;
+
+// 2. Then, get the type of a single item from that NonNullable array
+type DataTableHeader<T> = VDataTableInternalHeaders[number] & {
+  value?: keyof T | 'data-table-expand' | 'data-table-select' | (string & {});
+};
+// --- Interfaces for Data Table Items ---
+interface Product {
+  name: string;
+  total_sold: number;
+}
+
+interface Customer {
+  name: string;
+  total_bought: number;
+}
+
 // --- Computed Properties ---
 const formattedDate = computed(() => {
   const date = new Date(); // Get the current date
-
-  // Calculate the day of the year (not directly used in the final string, but kept if needed elsewhere)
-  const startOfYear = new Date(date.getFullYear(), 0, 1);
-  const diff = (date.getTime() - startOfYear.getTime());
-  const oneDay = 1000 * 60 * 60 * 24;
-  const dayOfYear = Math.ceil(diff / oneDay);
 
   // Calculate the week number (ISO standard)
   const target = new Date(date.valueOf());
@@ -255,44 +275,35 @@ const formattedDate = computed(() => {
 });
 
 function goToStockPage(){
-   router.push('/stock');
+    router.push('/stock');
 }
 
 function goToPurchasePage(){
-   router.push('/purchase');
+    router.push('/purchase');
 }
 
 function goToSalePage(){
-   router.push('/sale');
+    router.push('/sale');
 }
 
 function goToStatisticsPage(){
-   router.push('/statistics');
+    router.push('/statistics');
 }
 
-
-const topProductHeaders = computed(() => ([ // Make headers computed to react to locale changes
-  { title: t('name'), value: 'name', align: 'center' },
-  { title: t('totalSold'), value: 'total_sold', align: 'center' },
+// Corrected headers with 'as const' for align properties and explicit typing
+const topProductHeaders = computed<DataTableHeader<Product>[]>(() => ([
+  { title: t('name'), value: 'name', align: 'center' as const },
+  { title: t('totalSold'), value: 'total_sold', align: 'center' as const },
 ]));
 
-const topCustomerHeaders = computed(() => ([ // Make headers computed to react to locale changes
-  { title: t('name'), value: 'name', align: 'center' },
-  { title: t('totalBought'), value: 'total_bought', align: 'center' },
+// Corrected headers with 'as const' for align properties and explicit typing
+const topCustomerHeaders = computed<DataTableHeader<Customer>[]>(() => ([
+  { title: t('name'), value: 'name', align: 'center' as const },
+  { title: t('totalBought'), value: 'total_bought', align: 'center' as const },
 ]));
 
 
 // --- Methods ---
-async function fetchTotalStock() {
-  try {
-    const res = await axios.get('/api/stocks/totalStock');
-    totalStockQtty.value = res.data.totalStock || 0;
-  } catch (error) {
-    console.error('Error fetching total stock:', error);
-    // Optionally, you can add a snackbar or alert here
-  }
-}
-
 function formatNumberWithThousandsSeparator(value: number | string): string {
   if (typeof value === 'number') {
     return value.toLocaleString('en-US'); // Consider making this locale-aware if needed
@@ -301,6 +312,16 @@ function formatNumberWithThousandsSeparator(value: number | string): string {
     return Number(value).toLocaleString('en-US'); // Consider making this locale-aware if needed
   }
   return String(value); // Return as string if not a valid number
+}
+
+async function fetchTotalStock() {
+  try {
+    const res = await axios.get('/api/stocks/totalStock');
+    totalStockQtty.value = res.data.totalStock || 0;
+  } catch (error) {
+    console.error('Error fetching total stock:', error);
+    // Optionally, you can add a snackbar or alert here
+  }
 }
 
 async function fetchTotalPurchasePerDay() {

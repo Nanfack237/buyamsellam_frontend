@@ -93,7 +93,7 @@
                   <v-icon>mdi-microsoft-excel</v-icon> {{ t('excelBtn') }}
                 </v-btn>
 
-                <v-btn color="secondary" @click="printPurchases" class="mb-4">
+                <v-btn color="secondary" @click="printStocks" class="mb-4">
                   <v-icon>mdi-printer</v-icon> {{ t('printBtn') }}
                 </v-btn>
               </v-col>
@@ -223,16 +223,23 @@
 
 <script lang="ts" setup>
 import { ref, onMounted, nextTick, computed, watch } from 'vue'; // Import 'watch'
-import { useRouter } from 'vue-router';
 import axios from '@/axios'; // Ensure this path is correct for your axios instance
 import SideBarComponent from '@/components/stockcontroller/StockSideBarComponent.vue';
 import HeaderComponent from '@/components/stockcontroller/StockHeaderComponent.vue';
 import AppFooter from '@/components/AppFooter.vue';
 import { useI18n } from 'vue-i18n'; // Import useI18n
 
+import type { VDataTable } from 'vuetify/components';
+
 // --- Internationalization setup ---
 const { t, locale } = useI18n();
 
+type VDataTableInternalHeaders = NonNullable<VDataTable['$props']['headers']>;
+
+// 2. Then, get the type of a single item from that NonNullable array
+type DataTableHeader<T> = VDataTableInternalHeaders[number] & {
+  value?: keyof T | 'data-table-expand' | 'data-table-select' | (string & {});
+};
 // --- Configuration for Backend URL ---
 const backendUrl = 'http://localhost:8000'; // Make sure this matches your Laravel backend URL
 
@@ -244,6 +251,17 @@ const getLogoUrl = (logoPath: string | undefined | null) => {
   return logoPath || 'https://via.placeholder.com/60x60?text=No+Image'; // This is the fallback
 };
 
+interface Stock {
+  id: number;
+  productName: string;
+  cost_price: Number;
+  quantity: number;
+  last_quantity: number;
+  selling_price: number;
+  total_price: number;
+  status: number;
+ 
+}
 // --- Reactive State ---
 const stocks = ref<any[]>([]);
 const products = ref<any[]>([]);
@@ -292,7 +310,6 @@ const defaultItem = {
 const form = ref<any>(null);
 
 // --- Composables and Utilities ---
-const router = useRouter();
 
 // --- Computed Properties ---
 const formattedDate = computed(() => {
@@ -315,7 +332,7 @@ const datePrint = computed(() => {
 
 
 // Headers computed property to react to locale changes
-const headers = computed(() => [
+const headers = computed<DataTableHeader<Stock>[]>(() => [
   { title: t('productLabel'), value: 'productName', align: 'center' },
   { title: t('costPriceLabel') + ' (FCFA)', value: 'cost_price', align: 'center' },
   { title: t('currentQuantityLabel'), value: 'quantity', align: 'center' },
@@ -433,7 +450,7 @@ async function totalStock() {
   }
 }
 
-function printPurchases() {
+function printStocks() {
   if (selectedStock.value.length === 0) {
     showSnackbar(t('snackbar.selectItemToPrint'), 'error');
     return;
@@ -450,93 +467,94 @@ function printPurchases() {
 
     // Use current locale for date formatting in the filename
     const dateForFilename = new Date().toLocaleDateString(locale.value); 
-    if (printContent) {
-      printWindow?.document.write(`
-        <html>
-          <head>
-            <title>${t('stockStatusReportFilename', { date: dateForFilename.replace(/\//g, '-') })}</title>
-            <style>
-              body { font-family: Arial, sans-serif; padding: 10px; }
-              .report-container { width: 100%; margin: 0 auto; padding: 0px; }
-              
-              .report-header-section { 
-                text-align: center; 
-                margin-bottom: 10px; 
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                flex-wrap: wrap;
-              }
-              .report-logo {
-                max-width: 100px;
-                max-height: 80px;
-                margin-right: 15px;
-                margin-bottom: 10px;
-                display: block !important;
-                visibility: visible !important;
-                opacity: 1 !important;
-                -webkit-print-color-adjust: exact !important; 
-                print-color-adjust: exact !important; 
-                filter: none !important; 
-              }
-              .store-info {
-                display: flex;
-                flex-direction: column;
-                align-items: flex-start;
-              }
-              .report-store-name { 
-                font-size: 28px; 
-                margin-bottom: 5px; 
-                color: #333; 
-                font-weight: bold; 
-                text-align: left;
-              }
-              .report-store-contact-info { 
-                font-size: 14px; 
-                color: #777; 
-                margin-top: 0; 
-                line-height: 1.5; 
-                text-align: left;
-              }
+    
+    // Check if printWindow was successfully opened
+    if (printWindow) { // Add this check
+      if (printContent) {
+        printWindow.document.write(`
+          <html>
+            <head>
+              <title>${t('stockStatusReportFilename', { date: dateForFilename.replace(/\//g, '-') })}</title>
+              <style>
+                body { font-family: Arial, sans-serif; padding: 10px; }
+                .report-container { width: 100%; margin: 0 auto; padding: 0px; }
+                
+                .report-header-section { 
+                  text-align: center; 
+                  margin-bottom: 10px; 
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  flex-wrap: wrap;
+                }
+                .report-logo {
+                  max-width: 100px;
+                  max-height: 80px;
+                  margin-right: 15px;
+                  margin-bottom: 10px;
+                  display: block !important;
+                  visibility: visible !important;
+                  opacity: 1 !important;
+                  -webkit-print-color-adjust: exact !important; 
+                  print-color-adjust: exact !important; 
+                  filter: none !important; 
+                }
+                .store-info {
+                  display: flex;
+                  flex-direction: column;
+                  align-items: flex-start;
+                }
+                .report-store-name { 
+                  font-size: 28px; 
+                  margin-bottom: 5px; 
+                  color: #333; 
+                  font-weight: bold; 
+                  text-align: left;
+                }
+                .report-store-contact-info { 
+                  font-size: 14px; 
+                  color: #777; 
+                  margin-top: 0; 
+                  line-height: 1.5; 
+                  text-align: left;
+                }
 
-              .report-title-section { text-align: center; margin: 15px 0 10px 0; border-top: 1px solid #ddd; padding-top: 10px;}
-              .report-title { font-size: 22px; margin-bottom: 10px; color: #444; }
-              .report-date { font-size: 14px; color: #888; }
+                .report-title-section { text-align: center; margin: 15px 0 10px 0; border-top: 1px solid #ddd; padding-top: 10px;}
+                .report-title { font-size: 22px; margin-bottom: 10px; color: #444; }
+                .report-date { font-size: 14px; color: #888; }
 
-              .report-summary { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #eee; font-size: 14px; }
-              .report-summary strong { color: #000; }
-              
-              .report-table-section { margin-bottom: 30px; margin-top: 30px; }
-              .report-table { width: 100%; border-collapse: collapse; }
-              .report-table th, .report-table td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 13px;}
-              .report-table th { background-color: #f5f5f5; font-weight: bold; color: #333;}
-              .report-table tbody tr:nth-child(even) { background-color: #f9f9f9; }
+                .report-summary { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #eee; font-size: 14px; }
+                .report-summary strong { color: #000; }
+                
+                .report-table-section { margin-bottom: 30px; margin-top: 30px; }
+                .report-table { width: 100%; border-collapse: collapse; }
+                .report-table th, .report-table td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 13px;}
+                .report-table th { background-color: #f5f5f5; font-weight: bold; color: #333;}
+                .report-table tbody tr:nth-child(even) { background-color: #f9f9f9; }
 
-              .report-summary { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #eee; font-size: 14px; }
-              .report-summary strong { color: #000; }
+                .report-summary { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #eee; font-size: 14px; }
+                .report-summary strong { color: #000; }
 
-              .report-table-section { margin-bottom: 30px; margin-top: 30px; }
-              .report-table { width: 100%; border-collapse: collapse; }
-              .report-table th, .report-table td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 13px;}
-              .report-table th { background-color: #f5f5f5; font-weight: bold; color: #333;}
-              .report-table tbody tr:nth-child(even) { background-color: #f9f9f9; }
+                .report-table-section { margin-bottom: 30px; margin-top: 30px; }
+                .report-table { width: 100%; border-collapse: collapse; }
+                .report-table th, .report-table td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 13px;}
+                .report-table th { background-color: #f5f5f5; font-weight: bold; color: #333;}
+                .report-table tbody tr:nth-child(even) { background-color: #f9f9f9; }
 
-              .report-footer-section { 
-                margin-top: 10px;
-                position: fixed; 
-                bottom: 0;
-                left: 0;
-                width: 100%;
-                padding: 15px;
-                text-align: center;
-                z-index: 1000; 
-                font-size: 8px; 
-                color: #666;
-              }
-              .powered-by { font-style: italic; margin-top: 10px; }
-              
-              
-            
+                .report-footer-section { 
+                  margin-top: 10px;
+                  position: fixed; 
+                  bottom: 0;
+                  left: 0;
+                  width: 100%;
+                  padding: 15px;
+                  text-align: center;
+                  z-index: 1000; 
+                  font-size: 8px; 
+                  color: #666;
+                }
+                .powered-by { font-style: italic; margin-top: 10px; }
+                
                 .watermark {
                   position: absolute;
                   top: 50%;
@@ -552,30 +570,33 @@ function printPurchases() {
                   print-color-adjust: exact !important;
                   
                 }
-            </style>
-          </head>
-          <body> 
+              </style>
+            </head>
+            <body> 
               <div class="watermark">${ storeName.value}</div>
               ${printContent}
-            <script>
-              window.onload = function() {
-                window.print();
-                window.onafterprint = function() {
-                  window.close();
+              <script>
+                window.onload = function() {
+                  window.print();
+                  window.onafterprint = function() {
+                    window.close();
+                  };
                 };
-              };
-              <\/script>
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
-      printWindow.focus();
+                <\/script>
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+      } else {
+        showSnackbar(t('snackbar.printError'), 'error');
+      }
     } else {
-      showSnackbar(t('snackbar.printError'), 'error');
+      // Handle the case where the print window could not be opened (e.g., pop-up blocked)
+      showSnackbar(t('snackbar.popupBlocked'), 'warning'); // Assuming you have a translation for this
     }
   });
 }
-
 /**
  * Downloads the selected stock items as an Excel-compatible CSV file.
  */

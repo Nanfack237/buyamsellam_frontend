@@ -246,7 +246,6 @@
 
 <script lang="ts" setup>
 import { ref, nextTick, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
 import axios from '@/axios';
 import { useLoader } from '@/useLoader';
 import SideBarComponent from '@/components/SideBarComponent.vue';
@@ -254,9 +253,17 @@ import HeaderComponent from '@/components/HeaderComponent.vue';
 import AppFooter from '@/components/AppFooter.vue';
 import { useI18n } from 'vue-i18n'; // Import useI18n
 
+import type { VDataTable } from 'vuetify/components';
+
+
+type VDataTableInternalHeaders = NonNullable<VDataTable['$props']['headers']>;
+
+// 2. Then, get the type of a single item from that NonNullable array
+type DataTableHeader<T> = VDataTableInternalHeaders[number] & {
+  value?: keyof T | 'data-table-expand' | 'data-table-select' | (string & {});
+};
 // --- Composables and Utilities ---
 const { startLoading, stopLoading } = useLoader();
-const router = useRouter();
 const { t, locale} = useI18n(); // Destructure t and tm for message pluralization
 
 // Adjust this backend URL if your Laravel API is hosted elsewhere
@@ -269,6 +276,19 @@ const getLogoUrl = (logoPath: string | undefined | null) => {
   return logoPath || 'https://via.placeholder.com/60x60?text=No+Image';
 };
 
+interface Sale {
+  id: number;
+  productName: string;
+  costPrice: Number;
+  quantity: number;
+  selling_price: number;
+  total_price: number;
+  customer_name: string;
+  cashierName: string;
+  payment_method: string; // Original path from DB for image 1
+  date: string;
+ 
+}
 
 // --- Reactive State ---
 const sales = ref<any[]>([]);
@@ -331,16 +351,19 @@ const customerName = computed(() => {
   return t('saleTransactionsVue.tableCustomerN_A');
 });
 
-const headers = computed(() => [
-  { title: t('saleTransactionsVue.tableHeaders.product'), value: 'productName', align: 'center' },
+
+
+
+const headers = computed<DataTableHeader<Sale>[]>(() => [
+  { title: t('saleTransactionsVue.tableHeaders.product'), value: 'productName', align: 'center' as const},
   { title: t('saleTransactionsVue.tableHeaders.costPrice'), value: 'costPrice', align: 'center' },
-  { title: t('saleTransactionsVue.tableHeaders.sellingPrice'), value: 'selling_price', align: 'center' },
-  { title: t('saleTransactionsVue.tableHeaders.quantity'), value: 'quantity', align: 'center' },
-  { title: t('saleTransactionsVue.tableHeaders.total'), value: 'total_price', align: 'center' },
-  { title: t('saleTransactionsVue.tableHeaders.customer'), value: 'customer_name', align: 'center' },
-  { title: t('saleTransactionsVue.tableHeaders.method'), value: 'payment_method', align: 'center' },
-  { title: t('saleTransactionsVue.tableHeaders.cashier'), value: 'cashierName', align: 'center' },
-  { title: t('saleTransactionsVue.tableHeaders.date'), value: 'date', align: 'center' },
+  { title: t('saleTransactionsVue.tableHeaders.sellingPrice'), value: 'selling_price', align: 'center' as const},
+  { title: t('saleTransactionsVue.tableHeaders.quantity'), value: 'quantity', align: 'center' as const},
+  { title: t('saleTransactionsVue.tableHeaders.total'), value: 'total_price', align: 'center' as const},
+  { title: t('saleTransactionsVue.tableHeaders.customer'), value: 'customer_name', align: 'center' as const},
+  { title: t('saleTransactionsVue.tableHeaders.method'), value: 'payment_method', align: 'center' as const},
+  { title: t('saleTransactionsVue.tableHeaders.cashier'), value: 'cashierName', align: 'center' as const},
+  { title: t('saleTransactionsVue.tableHeaders.date'), value: 'date', align: 'center' as const},
 ]);
 
 const filteredSale = computed(() => {

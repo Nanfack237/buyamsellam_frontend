@@ -5,7 +5,7 @@
   </v-card>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, onMounted, watch, onUnmounted } from 'vue';
 import axios from '@/axios'; // Assuming your axios instance
 import { Chart, registerables } from 'chart.js/auto';
@@ -20,29 +20,25 @@ const props = defineProps({
   filterParams: Object, // Expecting an object with year, month, week, start_date, end_date, store
 });
 
-const purchaseChart = ref<HTMLCanvasElement | null>(null);
-let chartInstance: Chart | null = null;
+const purchaseChart = ref(null);
+let chartInstance = null;
 
-const labels = ref<string[]>([]);
-const data = ref<number[]>([]);
+const labels = ref([]);
+const data = ref([]);
 
 /**
  * Fetches purchase summary data based on the provided filter parameters.
  * @param {object} params - Object containing filter criteria (year, month, week, start_date, end_date, store).
  */
-async function fetchPurchase(params: any) { // Use 'any' or define a more specific interface for params
+async function fetchPurchase(params) {
   try {
-    // Get locale from local storage, default to 'en' if not found
-    const currentLocale = localStorage.getItem('user_locale') || 'en';
-
     // Backend endpoint should be able to handle these filter parameters
     // We are using POST to send the filter parameters in the request body
-    // The locale is sent as a query parameter
-    const response = await axios.post(`/api/purchases/purchasesummaryperperiod?locale=${currentLocale}`, params);
+    const responses = await axios.post('/api/purchases/purchasesummaryperperiod', params);
 
     // Assuming backend returns { labels: [], data: [] } for the chart
-    labels.value = response.data.labels || [];
-    data.value = response.data.data || [];
+    labels.value = responses.data.labels || [];
+    data.value = responses.data.data || [];
 
     renderChart();
   } catch (error) {
@@ -69,11 +65,10 @@ function renderChart() {
   }
 
   chartInstance = new Chart(purchaseChart.value, {
-    type: 'bar', // Bar chart type
+    type: 'bar',
     data: {
       labels: labels.value,
       datasets: [{
-        // --- TRANSLATION CHANGE HERE ---
         label: t('chartPurchasePeriod.total_purchase_fcfa'),
         data: data.value,
         backgroundColor: 'rgba(247, 148, 29, 0.6)', // Orange color
@@ -92,7 +87,6 @@ function renderChart() {
           beginAtZero: true,
           title: {
             display: true,
-            // --- TRANSLATION CHANGE HERE ---
             text: t('chartPurchasePeriod.purchase_amount_fcfa') // Y-axis title
           },
           callbacks: {
@@ -105,7 +99,6 @@ function renderChart() {
         x: {
           title: {
             display: true,
-            // --- TRANSLATION CHANGE HERE ---
             text: t('chartPurchasePeriod.period') // X-axis title (e.g., Day, Month, Week)
           }
         }
@@ -148,15 +141,7 @@ watch(() => props.filterParams, (newParams) => {
 // Watch the locale for changes and re-render the chart
 watch(locale, () => {
     console.log('Locale changed, re-rendering purchase chart...');
-    // When locale changes, we need to re-fetch data to get translated labels from backend
-    // and then re-render. If filterParams exist, re-fetch with them.
-    if (props.filterParams) {
-      fetchPurchase(props.filterParams);
-    } else {
-      // If no filterParams are set yet (e.g., on initial load before filters are applied),
-      // just re-render with current data (which might be empty) to update axis/legend.
-      renderChart();
-    }
+    renderChart();
 });
 
 // Destroy chart instance when component is unmounted

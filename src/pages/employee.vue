@@ -253,7 +253,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="(employee, index) in selectedEmployee" :key="employee.id">
+                    <tr v-for="(employee, index) in selectedEmployee" :key="employee.id ?? index">
                       <td>{{ index + 1 }}</td>
                       <td>{{ employee.name }}</td>
                       <td>{{ employee.email }}</td>
@@ -356,8 +356,17 @@ import HeaderComponent from '@/components/HeaderComponent.vue';
 import AppFooter from '@/components/AppFooter.vue';
 import { useI18n } from 'vue-i18n'; // Import useI18n
 
+import type { VDataTable } from 'vuetify/components';
+
 const { t, locale } = useI18n(); // Destructure the t (translate) function
 
+
+type VDataTableInternalHeaders = NonNullable<VDataTable['$props']['headers']>;
+
+// 2. Then, get the type of a single item from that NonNullable array
+type DataTableHeader<T> = VDataTableInternalHeaders[number] & {
+  value?: keyof T | 'data-table-expand' | 'data-table-select' | (string & {});
+};
 // --- Interfaces ---
 interface Employee {
   id: number | null; // Nullable for new employees
@@ -444,16 +453,16 @@ const filteredEmployee = computed<Employee[]>(() => {
   });
 });
 
-const headers = computed (() => [
-  { title: t('employeeVue.photo'), value: 'image', align: 'center' },
-  { title: t('employeeVue.name'), value: 'name', align: 'center' },
-  { title: t('employeeVue.email'), value: 'email', align: 'center' },
-  { title: t('employeeVue.contact'), value: 'contact', align: 'center' },
-  { title: t('employeeVue.address'), value: 'address', align: 'center' },
-  { title: t('employeeVue.role'), value: 'role', align: 'center' },
-  { title: t('employeeVue.date_hired'), value: 'created_at', align: 'center' },
-  { title: t('employeeVue.status'), value: 'status', align: 'center' },
-  { title: t('employeeVue.actions'), value: 'actions', align: 'center', sortable: false },
+const headers = computed<DataTableHeader<Employee>[]>(() => [
+  { title: t('employeeVue.photo'), value: 'image', align: 'center' as const},
+  { title: t('employeeVue.name'), value: 'name', align: 'center' as const},
+  { title: t('employeeVue.email'), value: 'email', align: 'center' as const},
+  { title: t('employeeVue.contact'), value: 'contact', align: 'center'as const },
+  { title: t('employeeVue.address'), value: 'address', align: 'center' as const},
+  { title: t('employeeVue.role'), value: 'role', align: 'center' as const},
+  { title: t('employeeVue.date_hired'), value: 'created_at', align: 'center' as const},
+  { title: t('employeeVue.status'), value: 'status', align: 'center' as const},
+  { title: t('employeeVue.actions'), value: 'actions', align: 'center' as const, sortable: false },
 ]);
 
 
@@ -586,7 +595,7 @@ function openEditDialog(item: Employee | null = null) {
   if (item) {
     editedItem.value = {
       ...item,
-      status: item.status === true || item.status === 1 ? 1 : 0, // Ensure status is 1 or 0
+      status: item.status === 1 ? 1 : 0, // Simplified: status is already 0 or 1
       imageFile: null, // No new file selected initially
       selectedImagePreview: null, // No new file preview initially
       originalImagePath: item.image, // Store current image path

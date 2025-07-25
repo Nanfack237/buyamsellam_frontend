@@ -135,8 +135,8 @@
                 </i18n-t>
               </v-card-text>
               <v-card-actions class="justify-center">
-                <v-btn color="error" variant="flat" @click="executeDelete" :loading="loading">{{ $t('supplierListVue.deleteDialog.deleteButton') }}</v-btn>
-                <v-btn color="secondary" @click="cancelDelete">{{ $t('supplierListVue.deleteDialog.cancelButton') }}</v-btn>
+                <v-btn color="error" variant="flat" @click="executeDelete()" :loading="loading">{{ $t('supplierListVue.deleteDialog.deleteButton') }}</v-btn>
+                <v-btn color="secondary" @click="cancelDelete()">{{ $t('supplierListVue.deleteDialog.cancelButton') }}</v-btn>
               </v-card-actions>
             </v-card>
           </v-dialog>
@@ -211,10 +211,18 @@ import axios from '@/axios'; // Assuming this is your configured Axios instance
 import SideBarComponent from '@/components/SideBarComponent.vue';
 import HeaderComponent from '@/components/HeaderComponent.vue';
 import AppFooter from '@/components/AppFooter.vue';
+
 import { useI18n } from 'vue-i18n'; // Import useI18n
+import type { VDataTable } from 'vuetify/components';
 
 const { t, locale } = useI18n(); // Use i18n
 
+type VDataTableInternalHeaders = NonNullable<VDataTable['$props']['headers']>;
+
+// 2. Then, get the type of a single item from that NonNullable array
+type DataTableHeader<T> = VDataTableInternalHeaders[number] & {
+  value?: keyof T | 'data-table-expand' | 'data-table-select' | (string & {});
+};
 // --- Interfaces ---
 interface Supplier {
   id: number;
@@ -288,11 +296,11 @@ const filteredSupplier = computed<Supplier[]>(() => {
   });
 });
 
-const headers = computed(() =>[
-  { title: t('supplierListVue.tableHeaders.name'), value: 'name', align: 'start' },
-  { title: t('supplierListVue.tableHeaders.address'), value: 'address', align: 'start' },
-  { title: t('supplierListVue.tableHeaders.contact'), value: 'contact', align: 'start' },
-  { title: t('supplierListVue.tableHeaders.actions'), value: 'actions', align: 'center', sortable: false },
+const headers = computed<DataTableHeader<Supplier>[]>(() =>[
+  { title: t('supplierListVue.tableHeaders.name'), value: 'name', align: 'start' as const },
+  { title: t('supplierListVue.tableHeaders.address'), value: 'address', align: 'start' as const },
+  { title: t('supplierListVue.tableHeaders.contact'), value: 'contact', align: 'start' as const },
+  { title: t('supplierListVue.tableHeaders.actions'), value: 'actions', align: 'center' as const, sortable: false },
 ]);
 
 // --- Validation Rules (for dialog) ---

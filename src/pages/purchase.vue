@@ -189,11 +189,19 @@ import HeaderComponent from '@/components/HeaderComponent.vue';
 import AppFooter from '@/components/AppFooter.vue';
 import { useI18n } from 'vue-i18n';
 
+import type { VDataTable } from 'vuetify/components';
+
 // --- Composables and Utilities ---
 const { startLoading, stopLoading } = useLoader();
 const router = useRouter();
 const { t, locale } = useI18n(); // Destructure t and locale for reactive changes
 
+type VDataTableInternalHeaders = NonNullable<VDataTable['$props']['headers']>;
+
+// 2. Then, get the type of a single item from that NonNullable array
+type DataTableHeader<T> = VDataTableInternalHeaders[number] & {
+  value?: keyof T | 'data-table-expand' | 'data-table-select' | (string & {});
+};
 const backendUrl = 'http://localhost:8000';
 
 const getLogoUrl = (logoPath: string | undefined | null) => {
@@ -203,6 +211,16 @@ const getLogoUrl = (logoPath: string | undefined | null) => {
   return logoPath || 'https://via.placeholder.com/60x60?text=No+Image';
 };
 
+interface Purchase {
+  id: number;
+  productName: string;
+  unit_price: Number;
+  quantity: number;
+  supplierName: string;
+  recordedBy: string; // Original path from DB for image 1
+  date: string;
+ 
+}
 
 // --- Reactive State ---
 const purchases = ref<any[]>([]);
@@ -252,13 +270,13 @@ const datePrint = computed(() => {
 });
 
 // THIS IS THE KEY CHANGE: Make headers a computed property
-const headers = computed(() => [
-  { title: t('purchaseTransactionsVue.productHeader'), value: 'productName', align: 'center' },
-  { title: t('purchaseTransactionsVue.costPriceHeader'), value: 'unit_price', align: 'center' },
-  { title: t('purchaseTransactionsVue.quantityHeader'), value: 'quantity', align: 'center' },
-  { title: t('purchaseTransactionsVue.supplierHeader'), value: 'supplierName', align: 'center' },
-  { title: t('purchaseTransactionsVue.recordedByHeader'), value: 'recordedBy', align: 'center' },
-  { title: t('purchaseTransactionsVue.dateHeader'), value: 'date', align: 'center' },
+const headers = computed<DataTableHeader<Purchase>[]>(() => [
+  { title: t('purchaseTransactionsVue.productHeader'), value: 'productName', align: 'center' as const },
+  { title: t('purchaseTransactionsVue.costPriceHeader'), value: 'unit_price', align: 'center' as const },
+  { title: t('purchaseTransactionsVue.quantityHeader'), value: 'quantity', align: 'center' as const},
+  { title: t('purchaseTransactionsVue.supplierHeader'), value: 'supplierName', align: 'center' as const},
+  { title: t('purchaseTransactionsVue.recordedByHeader'), value: 'recordedBy', align: 'center' as const},
+  { title: t('purchaseTransactionsVue.dateHeader'), value: 'date', align: 'center' as const},
 
 ]);
 
@@ -286,12 +304,11 @@ const filteredPurchase = computed(() => {
  * @param color The color of the snackbar (e.g., 'success', 'error').
  * @param interpolation Optional object for message interpolation.
  */
-function showSnackbar(messageKey: string, color: string, interpolation?: Record<string, string>) {
-  snackbarMessage.value = t(messageKey, interpolation);
+function showSnackbar(message: string, color: string) {
+  snackbarMessage.value = message;
   snackbarColor.value = color;
   snackbar.value = true;
 }
-
 // New: Function to format numbers with thousand separators
 function formatNumberWithThousandsSeparator(value: number | string): string {
   if (typeof value === 'number') {
@@ -308,7 +325,7 @@ async function fetchProducts() {
   try {
     const token = sessionStorage.getItem('access_token');
     if (!token) {
-        showSnackbar('commonPurchaseTransactions.snackbar.authRequired', 'error');
+        showSnackbar(t('commonPurchaseTransactions.snackbar.authRequired'), 'error');
         return;
     }
     const res = await axios.get('/api/products', {
@@ -317,7 +334,7 @@ async function fetchProducts() {
     products.value = res.data.products;
   } catch (error) {
     console.error('Error fetching products:', error);
-    showSnackbar('commonPurchaseTransactions.snackbar.errorFetchingProducts', 'error');
+    showSnackbar(t('commonPurchaseTransactions.snackbar.errorFetchingProducts'), 'error');
   }
 }
 
@@ -325,7 +342,7 @@ async function fetchSuppliers() {
   try {
     const token = sessionStorage.getItem('access_token');
     if (!token) {
-        showSnackbar('commonPurchaseTransactions.snackbar.authRequired', 'error');
+        showSnackbar(t('commonPurchaseTransactions.snackbar.authRequired'), 'error');
         return;
     }
     const res = await axios.get('/api/suppliers', {
@@ -334,7 +351,7 @@ async function fetchSuppliers() {
     suppliers.value = res.data.suppliers;
   } catch (error) {
     console.error('Error fetching suppliers:', error);
-    showSnackbar('commonPurchaseTransactions.snackbar.errorFetchingSuppliers', 'error');
+    showSnackbar(t('commonPurchaseTransactions.snackbar.errorFetchingSuppliers'), 'error');
   }
 }
 
@@ -342,7 +359,7 @@ async function fetchUsers() {
   try {
     const token = sessionStorage.getItem('access_token');
     if (!token) {
-      showSnackbar('commonPurchaseTransactions.snackbar.authRequired', 'error');
+      showSnackbar(t('commonPurchaseTransactions.snackbar.authRequired'), 'error');
       return;
     }
     const res = await axios.get('/api/users', {
@@ -351,7 +368,7 @@ async function fetchUsers() {
     users.value = res.data.users;
   } catch (error) {
     console.error('Error fetching users:', error);
-    showSnackbar('commonPurchaseTransactions.snackbar.errorFetchingUsers', 'error');
+    showSnackbar(t('commonPurchaseTransactions.snackbar.errorFetchingUsers'), 'error');
   }
 }
 
@@ -359,7 +376,7 @@ async function fetchStore() {
   try {
     const token = sessionStorage.getItem('access_token');
     if (!token) {
-      showSnackbar('commonPurchaseTransactions.snackbar.authRequired', 'error');
+      showSnackbar(t('commonPurchaseTransactions.snackbar.authRequired'), 'error');
       return;
     }
     const response = await axios.get('/api/stores/show', {
@@ -381,7 +398,7 @@ async function fetchPurchase() {
   try {
     const token = sessionStorage.getItem('access_token');
     if (!token) {
-        showSnackbar('commonPurchaseTransactions.snackbar.authRequired', 'error');
+        showSnackbar(t('commonPurchaseTransactions.snackbar.authRequired'), 'error');
         return;
     }
     const response = await axios.get('/api/purchases', {
@@ -402,10 +419,10 @@ async function fetchPurchase() {
   } catch (error: any) {
     console.error('Error fetching purchase:', error);
     if (error.response && error.response.status === 401) {
-        showSnackbar('commonPurchaseTransactions.snackbar.authRequired', 'error');
+        showSnackbar(t('commonPurchaseTransactions.snackbar.authRequired'), 'error');
         router.push('/login');
     } else {
-        showSnackbar('commonPurchaseTransactions.snackbar.errorFetchingPurchases', 'error');
+        showSnackbar(t('commonPurchaseTransactions.snackbar.errorFetchingPurchases'), 'error');
     }
   } finally {
     isDataLoaded.value = true;
@@ -414,7 +431,7 @@ async function fetchPurchase() {
 
 function printPurchases() {
   if (!selectedPurchase.value.length) {
-    showSnackbar('purchaseTransactionsVue.selectProductForReport', 'error');
+    showSnackbar(t('purchaseTransactionsVue.selectProductForReport'), 'error');
     return;
   }
 
@@ -422,7 +439,7 @@ function printPurchases() {
   nextTick(() => {
     if (!printSection.value) {
       console.warn('Print section HTML element is not available.');
-      showSnackbar('commonPurchaseTransactions.snackbar.printUnavailable', 'error');
+      showSnackbar(t('commonPurchaseTransactions.snackbar.printUnavailable'), 'error');
       return;
     }
 
@@ -552,14 +569,14 @@ function printPurchases() {
       printWindow.document.close();
       printWindow.focus();
     } else {
-      showSnackbar('commonPurchaseTransactions.snackbar.printWindowBlocked', 'error');
+      showSnackbar(t('commonPurchaseTransactions.snackbar.printWindowBlocked'), 'error');
     }
   });
 }
 
 function downloadExcel() {
   if (selectedPurchase.value.length === 0) {
-    showSnackbar('purchaseTransactionsVue.noTransactionSelectedExport', 'error');
+    showSnackbar(t('purchaseTransactionsVue.noTransactionSelectedExport'), 'error');
     return;
   }
 
@@ -607,9 +624,9 @@ function downloadExcel() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    showSnackbar('purchaseTransactionsVue.transactionsExportedSuccess', 'success');
+    showSnackbar(t('purchaseTransactionsVue.transactionsExportedSuccess'), 'success');
   } else {
-    showSnackbar('commonPurchaseTransactions.snackbar.downloadNotSupported', 'error');
+    showSnackbar(t('commonPurchaseTransactions.snackbar.downloadNotSupported'), 'error');
   }
 }
 
@@ -634,7 +651,7 @@ onMounted(async () => {
     await fetchPurchase(); // This now relies on products, suppliers, and users being populated
   } catch (error) {
     console.error('Error during initial data fetch:', error);
-    showSnackbar('commonPurchaseTransactions.snackbar.initialDataLoadError', 'error');
+    showSnackbar(t('commonPurchaseTransactions.snackbar.initialDataLoadError'), 'error');
   } finally {
     stopLoading();
   }

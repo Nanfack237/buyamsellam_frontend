@@ -5,7 +5,7 @@
         <SideBarComponent />
         <HeaderComponent
           :products="products"
-          :storeIdProp="storeId" @sale-completed="handleSaleCompleted"
+          :storeIdProp="storeIdFromProduct" @sale-completed="handleSaleCompleted"
           @refresh-products="fetchProducts"
         />
 
@@ -234,6 +234,8 @@
   </v-app>
 </template>
 
+---
+
 <script lang="ts" setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
@@ -291,7 +293,7 @@ const cartStore = useCartStore();
 const products = ref<Product[]>([]);
 const search = ref('');
 const isDataLoaded = ref(false);
-const storeIdFromProduct = ref<string | null>(null);
+const storeIdFromProduct = ref<string | null>(null); // Correctly named reactive variable
 
 const snackbar = ref(false);
 const snackbarMessage = ref('');
@@ -360,7 +362,13 @@ async function fetchProducts() {
     const userId = sessionStorage.getItem('userId');
     let currentStoreId = sessionStorage.getItem('storeId');
 
-    if (!currentStoreId && userId) {
+    if (!token || !userId) { // Ensure token is also checked here
+        showSnackbar('Authentication required. Please log in.', 'error');
+        router.push('/login'); // Use path directly
+        return;
+    }
+
+    if (!currentStoreId) {
         try {
             const employeeResponse = await axios.get('/api/employees/showstore', {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -464,8 +472,8 @@ async function fetchProducts() {
 
 
             const initialSellingPrice = selectedStockForDisplay?.selling_price !== undefined && selectedStockForDisplay?.selling_price !== null
-                                        ? Number(selectedStockForDisplay.selling_price)
-                                        : (Number(p.price) || 0);
+                                         ? Number(selectedStockForDisplay.selling_price)
+                                         : (Number(p.price) || 0);
             
             const selectedStockId = selectedStockForDisplay?.id || null;
             const totalAggregatedStockQuantity = associatedAggregatedStockInfo?.totalQuantity || 0;
@@ -490,7 +498,7 @@ async function fetchProducts() {
                 showSnackbar(t('cashierProductVue.snackbarApiNotFound'), 'error');
             } else if (error.response.status === 401) {
                 showSnackbar(t('cashierProductVue.snackbarUnauthorized'), 'error');
-                router.push({ name: 'Login' });
+                router.push('/login'); // Use path directly
             }
             else {
                 showSnackbar(t('cashierProductVue.snackbarErrorFetchingData', { errorDetails: error.response.statusText || 'Unknown error' }), 'error');

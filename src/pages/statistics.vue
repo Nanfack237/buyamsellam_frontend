@@ -239,7 +239,9 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import axios from '@/axios';
 import { useLoader } from '@/useLoader';
-import { useI18n } from 'vue-i18n'; // Import useI18n
+import { useI18n } from 'vue-i18n';
+
+import type { VDataTable } from 'vuetify/components';
 
 // Import your chart components and sidebar/header/footer
 import SideBarComponent from '@/components/SideBarComponent.vue';
@@ -249,9 +251,17 @@ import ChartByPurchasePerPeriod from '@/components/ChartByPurchasePerPeriod.vue'
 import ChartByProfitPerPeriod from '@/components/ChartByProfitPerPeriod.vue';
 import ChartBySalePerPeriod from '@/components/ChartBySalePerPeriod.vue';
 
-const { t, locale } = useI18n(); // Destructure the t (translate) function and locale
+const { t, locale } = useI18n();
 
 // --- Composables and Utilities ---
+
+type VDataTableInternalHeaders = NonNullable<VDataTable['$props']['headers']>;
+
+// 2. Then, get the type of a single item from that NonNullable array
+type DataTableHeader<T> = VDataTableInternalHeaders[number] & {
+  value?: keyof T | 'data-table-expand' | 'data-table-select' | (string & {});
+};
+
 const { startLoading, stopLoading } = useLoader();
 
 // --- Reactive State ---
@@ -259,34 +269,29 @@ const totalStockQtty = ref<number | null>(null);
 const totalPurchaseCount = ref<number | null>(null);
 const totalSaleCount = ref<number | null>(null);
 const totalprofit = ref<number | null>(null);
-const topProducts = ref<any[]>([]);
-const topCustomers = ref<any[]>([]);
+const topProducts = ref<any[]>([]); // Consider refining this type if possible
+const topCustomers = ref<any[]>([]); // Consider refining this type if possible
 const isDataLoaded = ref(false);
 const fetchedAvailableYears = ref<number[]>([]);
 
-// Filter
-const totalProfitAll = ref();
-const totalPurchaseCountAll = ref();
-const totalSaleCountAll = ref();
-const totalStockQttyNoFilter = ref()
-
 // Filter selections
-const selectedYear = ref<number | null>(null); // Start with no year selected
+const selectedYear = ref<number | null>(null);
 const selectedMonth = ref<number | null>(null);
-const selectedWeek = ref<number | null>(null);
+const selectedWeek = ref<number | null>(null); // selectedWeek value will be the ISO week number (e.g., 1-53)
 
 // The filter parameters object that will be passed to child chart components
 const currentFilterParams = ref<any>({});
 
 
-function formatNumberWithThousandsSeparator(value: number | string): string {
+function formatNumberWithThousandsSeparator(value: number | string | null): string {
+  if (value === null || value === undefined) return '0';
   if (typeof value === 'number') {
     return value.toLocaleString('en-CM', { style: 'currency', currency: 'XAF', minimumFractionDigits: 0, maximumFractionDigits: 0 });
   }
   if (typeof value === 'string' && !isNaN(Number(value))) {
     return Number(value).toLocaleString('en-CM', { style: 'currency', currency: 'XAF', minimumFractionDigits: 0, maximumFractionDigits: 0 });
   }
-  return String(value); // Return as string if not a valid number
+  return String(value);
 }
 
 // --- Computed Properties ---
@@ -299,22 +304,20 @@ async function fetchAvailableYearsFromApi() {
     const storePayload = selectedStore ? { id: selectedStore.id, name: selectedStore.name } : {};
     const response = await axios.get('/api/sales/getavailableyears', {
       params: {
-        store: JSON.stringify(storePayload) // Pass selected store if applicable
+        store: JSON.stringify(storePayload)
       }
     });
     fetchedAvailableYears.value = response.data.years;
-    // Set selectedYear to the latest available year if current selectedYear is not in list
-    // or if no years are fetched, default to current year
     if (fetchedAvailableYears.value.length > 0) {
-      if (!fetchedAvailableYears.value.includes(selectedYear.value || 0)) {
+      if (selectedYear.value === null || !fetchedAvailableYears.value.includes(selectedYear.value)) {
         selectedYear.value = Math.max(...fetchedAvailableYears.value);
       }
     } else {
-      selectedYear.value = new Date().getFullYear(); // Fallback if no years found
+      selectedYear.value = new Date().getFullYear();
     }
   } catch (error) {
     console.error('Error fetching available years:', error);
-    fetchedAvailableYears.value = [new Date().getFullYear()]; // Fallback to current year on error
+    fetchedAvailableYears.value = [new Date().getFullYear()];
   }
 }
 
@@ -340,14 +343,9 @@ const availableMonths = computed(() => [
  * @returns The ISO week number (1-53).
  */
 function getISOWeekNumber(d: Date): number {
-  // Copy date so don't modify original
   d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  // Set to nearest Thursday: current date + 4 - current day number
-  // Make Sunday's day number 7
   d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-  // Get first day of year
   const yearStart = new Date(Date.UTC(d.getFullYear(), 0, 1));
-  // Calculate full weeks to nearest Thursday
   const weekNo = Math.ceil((((d.valueOf() - yearStart.valueOf()) / 86400000) + 1) / 7);
   return weekNo;
 }
@@ -359,90 +357,73 @@ function getISOWeekNumber(d: Date): number {
  * @returns A Date object representing the Monday of that ISO week.
  */
 function getMondayOfISOWeek(year: number, weekNumber: number): Date {
-    // January 4th is always in ISO Week 1
-    const jan4th = new Date(year, 0, 4);
-    const jan4thDay = jan4th.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  const jan4th = new Date(year, 0, 4);
+  const jan4thDay = jan4th.getDay();
 
-    // Calculate the Monday of ISO Week 1 for this year
-    const mondayOfFirstISOWeek = new Date(jan4th);
-    mondayOfFirstISOWeek.setDate(jan4th.getDate() - (jan4thDay === 0 ? 6 : jan4thDay - 1));
+  const mondayOfFirstISOWeek = new Date(jan4th);
+  mondayOfFirstISOWeek.setDate(jan4th.getDate() - (jan4thDay === 0 ? 6 : jan4thDay - 1));
 
-    // Calculate the Monday of the desired week
-    const targetMonday = new Date(mondayOfFirstISOWeek);
-    targetMonday.setDate(mondayOfFirstISOWeek.getDate() + (weekNumber - 1) * 7);
+  const targetMonday = new Date(mondayOfFirstISOWeek);
+  targetMonday.setDate(mondayOfFirstISOWeek.getDate() + (weekNumber - 1) * 7);
 
-    return targetMonday;
+  return targetMonday;
 }
 
-// Adjusted availableWeeks computed property
 const availableWeeks = computed(() => {
   if (selectedYear.value === null) {
-    return []; // If no year is selected, no weeks are available
+    return [];
   }
 
   const year = selectedYear.value;
-  const month = selectedMonth.value; // Month is 1-indexed (1-12)
+  const month = selectedMonth.value;
 
-  const weeks = [];
-  let currentDayPointer: Date;
-  let endBoundary: Date;
+  const weeks: { title: string; value: number }[] = [];
+  const processedWeekKeys = new Set<string>();
+
+  let startDate: Date;
+  let endDate: Date;
 
   if (month !== null) {
-    // If month is selected, start from the first day of that month
-    currentDayPointer = new Date(year, month - 1, 1);
-    // End at the last day of that month
-    endBoundary = new Date(year, month, 0);
+    startDate = new Date(year, month - 1, 1);
+    endDate = new Date(year, month, 0);
   } else {
-    // If no month is selected, calculate weeks within the entire year
-    currentDayPointer = new Date(year, 0, 1);
-    endBoundary = new Date(year, 11, 31);
+    startDate = new Date(year, 0, 1);
+    endDate = new Date(year, 11, 31);
   }
 
-  // Find the Monday of the week containing the `currentDayPointer`
-  // This ensures we always start from a Monday for ISO week calculation
-  let initialMonday = getMondayOfISOWeek(currentDayPointer.getFullYear(), getISOWeekNumber(currentDayPointer));
+  const addWeek = (currentDate: Date) => {
+    const weekNum = getISOWeekNumber(currentDate);
+    const isoYear = currentDate.getFullYear();
+    const weekKey = `${isoYear}-${weekNum.toString().padStart(2, '0')}`;
 
-  // Adjust initialMonday if it's before the actual start of the month/year boundary
-  // This handles cases where the first day of the month/year is not a Monday.
-  if (initialMonday > currentDayPointer) {
-    initialMonday = new Date(currentDayPointer.getFullYear(), currentDayPointer.getMonth(), currentDayPointer.getDate());
-    initialMonday.setDate(initialMonday.getDate() - (initialMonday.getDay() === 0 ? 6 : initialMonday.getDay() - 1));
-  }
+    if (!processedWeekKeys.has(weekKey)) {
+      processedWeekKeys.add(weekKey);
 
+      const mondayOfWeek = getMondayOfISOWeek(isoYear, weekNum);
+      const sundayOfWeek = new Date(mondayOfWeek);
+      sundayOfWeek.setDate(mondayOfWeek.getDate() + 6);
 
-  let processedPeriodKeys: { [key: number]: boolean } = {}; // To prevent adding the same week multiple times
+      const displayStart = new Date(Math.max(mondayOfWeek.getTime(), startDate.getTime()));
+      const displayEnd = new Date(Math.min(sundayOfWeek.getTime(), endDate.getTime()));
 
-  // Loop as long as the Monday of the current week is within or before the end boundary
-  // We advance by 7 days in each iteration
-  while (initialMonday <= endBoundary) {
-    const weekNum = getISOWeekNumber(initialMonday);
-    const isoYear = initialMonday.getFullYear(); // Use the year of the current Monday for ISO year
-
-    const periodKey = (isoYear * 100) + weekNum; // Combine year and week to create a unique key (e.g., 202527)
-
-    // Only process this week if it hasn't been processed yet
-    if (!processedPeriodKeys[periodKey]) {
-        processedPeriodKeys[periodKey] = true; // Mark as processed
-
-        const weekStartDate = getMondayOfISOWeek(isoYear, weekNum); // Re-calculate to ensure it's the exact Monday
-        const weekEndDate = new Date(weekStartDate);
-        weekEndDate.setDate(weekStartDate.getDate() + 6); // Sunday of the same week
-
-        // Determine the actual display range for the week.
-        // This clips the week's dates to the selected month/year boundaries.
-        const displayStart = new Date(Math.max(weekStartDate.getTime(), currentDayPointer.getTime()));
-        const displayEnd = new Date(Math.min(weekEndDate.getTime(), endBoundary.getTime()));
-
-        // Only add the week if its effective display range is valid (start is not after end)
-        if (displayStart <= displayEnd) {
-            const displayWeekStart = displayStart.toLocaleString(locale.value, { month: 'short', day: 'numeric' });
-            const displayWeekEnd = displayEnd.toLocaleString(locale.value, { month: 'short', day: 'numeric' });
-            const displayTitle = `${t('statisticsVue.week')} ${weekNum} (${displayWeekStart} - ${displayWeekEnd})`;
-            weeks.push({ title: displayTitle, value: weekNum });
-        }
+      if (displayStart <= displayEnd) {
+        const displayWeekStart = displayStart.toLocaleString(locale.value, { month: 'short', day: 'numeric' });
+        const displayWeekEnd = displayEnd.toLocaleString(locale.value, { month: 'short', day: 'numeric' });
+        const displayTitle = `${t('statisticsVue.week')} ${weekNum} (${displayWeekStart} - ${displayWeekEnd})`;
+        weeks.push({ title: displayTitle, value: weekNum });
+      }
     }
-    initialMonday.setDate(initialMonday.getDate() + 7); // Move to the next Monday
+  };
+
+  let currentDay = new Date(startDate);
+  while (currentDay <= endDate) {
+    addWeek(currentDay);
+    currentDay.setDate(currentDay.getDate() + 1);
   }
+
+  addWeek(startDate);
+  addWeek(endDate);
+
 
   return weeks.sort((a, b) => a.value - b.value);
 });
@@ -456,19 +437,17 @@ const displayPeriod = computed(() => {
   const monthName = month ? availableMonths.value.find(m => m.value === month)?.title : null;
 
   if (year === null) {
-    return t('statisticsVue.all_time'); // Display 'All Time' if no year is selected
+    return t('statisticsVue.all_time');
   }
 
   if (week !== null) {
-    // Calculate the start and end dates for the specific week using the helper
     const weekStartDate = getMondayOfISOWeek(year, week);
     const weekEndDate = new Date(weekStartDate);
-    weekEndDate.setDate(weekStartDate.getDate() + 6); // Sunday of the same week
+    weekEndDate.setDate(weekStartDate.getDate() + 6);
 
     const weekStartFormat = weekStartDate.toLocaleString(locale.value, { month: 'short', day: 'numeric' });
     const weekEndFormat = weekEndDate.toLocaleString(locale.value, { month: 'short', day: 'numeric' });
 
-    // Display the year that the *start* of the week falls into, for clarity.
     const displayYearForWeek = weekStartDate.getFullYear();
 
     return `${t('statisticsVue.week')} ${week} (${weekStartFormat} - ${weekEndFormat}) ${displayYearForWeek}`;
@@ -481,19 +460,18 @@ const displayPeriod = computed(() => {
 });
 
 
-const topProductHeaders = computed(() => [
-  { title: t('statisticsVue.product_name'), value: 'name', align: 'center' },
-  { title: t('statisticsVue.quantity'), value: 'total_sold', align: 'center' },
+const topProductHeaders = computed<DataTableHeader<any>[]>(() => [
+  { title: t('statisticsVue.product_name'), value: 'name', align: 'start' as const },
+  { title: t('statisticsVue.quantity'), value: 'total_sold', align: 'end' as const },
 ]);
 
-const topCustomerHeaders = computed(() => [
-  { title: t('statisticsVue.customer_name'), value: 'name', align: 'center' },
-  { title: t('statisticsVue.quantity'), value: 'total_bought', align: 'center' },
+const topCustomerHeaders = computed<DataTableHeader<any>[]>(() => [
+  { title: t('statisticsVue.customer_name'), value: 'name', align: 'start' as const },
+  { title: t('statisticsVue.quantity'), value: 'total_bought', align: 'end' as const },
 ]);
 
 // --- Methods ---
 
-// Helper to get store ID from localStorage
 function getStoreId(): number | null {
   const store = sessionStorage.getItem('storeId');
   if (store) {
@@ -509,7 +487,6 @@ function getStoreId(): number | null {
   return null;
 }
 
-// Re-fetch all dashboard data based on current filters
 async function applyFilters() {
   const store_id = getStoreId();
   if (store_id === null) {
@@ -519,7 +496,7 @@ async function applyFilters() {
     return;
   }
 
-  isDataLoaded.value = false; // Set to false to show the loading overlay
+  isDataLoaded.value = false;
   startLoading();
 
   let startDate: string | null = null;
@@ -533,25 +510,21 @@ async function applyFilters() {
     store: JSON.stringify({ id: store_id }),
   };
 
-  // Only add date filters if a year is selected
   if (currentSelectionYear !== null) {
     if (currentSelectionWeek !== null) {
-      // If week is selected, determine dates based on that specific week
       const weekStartDate = getMondayOfISOWeek(currentSelectionYear, currentSelectionWeek);
       const weekEndDate = new Date(weekStartDate);
-      weekEndDate.setDate(weekStartDate.getDate() + 6); // Sunday of the same week
+      weekEndDate.setDate(weekStartDate.getDate() + 6);
 
       startDate = weekStartDate.toISOString().split('T')[0];
       endDate = weekEndDate.toISOString().split('T')[0];
     } else if (currentSelectionMonth !== null) {
-      // If only a month is selected, filter by month
       const monthStart = new Date(currentSelectionYear, currentSelectionMonth - 1, 1);
-      const monthEnd = new Date(currentSelectionYear, currentSelectionMonth, 0); // Last day of the month
+      const monthEnd = new Date(currentSelectionYear, currentSelectionMonth, 0);
 
       startDate = monthStart.toISOString().split('T')[0];
       endDate = monthEnd.toISOString().split('T')[0];
     } else {
-      // If only a year is selected (month and week are null), filter by the entire year
       const yearStart = new Date(currentSelectionYear, 0, 1);
       const yearEnd = new Date(currentSelectionYear, 11, 31);
 
@@ -570,25 +543,18 @@ async function applyFilters() {
       filters.week = currentSelectionWeek;
     }
   }
-  // If currentSelectionYear is null, no date filters will be added to `filters` object,
-  // making the backend functions return overall data for the store.
 
-  // Update currentFilterParams to pass to child chart components
   currentFilterParams.value = filters;
-  console.log('Applying filters:', filters); // Debugging
+  console.log('Applying filters:', filters);
 
   try {
-    // Use Promise.all to fetch all data concurrently for better performance
     await Promise.all([
-      fetchAggregatedTotals(filters), // Fetches and sums data for summary cards
+      fetchAggregatedTotals(filters),
       fetchMostSoldProduct(filters),
       fetchTopCustomer(filters),
-      // Chart components will automatically re-fetch their data because `currentFilterParams` is reactive
-      // and passed as a prop, triggering their watchers.
     ]);
   } catch (error) {
     console.error('Error applying filters or fetching dashboard data:', error);
-    // Set dashboard values to 0 or empty arrays on error to prevent undefined display
     totalPurchaseCount.value = 0;
     totalSaleCount.value = 0;
     totalprofit.value = 0;
@@ -596,33 +562,27 @@ async function applyFilters() {
     topProducts.value = [];
     topCustomers.value = [];
   } finally {
-    isDataLoaded.value = true; // Data fetching complete, hide loader
+    isDataLoaded.value = true;
     stopLoading();
   }
 }
 
-// Fetches data for the summary cards and aggregates it
 async function fetchAggregatedTotals(params: any) {
   try {
-    // Fetch Total Stock (sums data array from period endpoint)
     const stockRes = await axios.post('/api/stocks/totalstockperperiod', params);
     totalStockQtty.value = stockRes.data.totalStock;
 
-    // Fetch Total Purchase Count (calls count endpoint directly)
     const purchaseCountRes = await axios.post('/api/purchases/totalpurchasecountperperiod', params);
     totalPurchaseCount.value = purchaseCountRes.data.totalPurchaseCount || 0;
 
-    // Fetch Total Sale Count (calls count endpoint directly)
     const saleCountRes = await axios.post('/api/sales/totalsalecountperperiod', params);
     totalSaleCount.value = saleCountRes.data.totalSaleCount || 0;
 
-    // Fetch Total Profit (sums data array from period endpoint)
     const profitRes = await axios.post('/api/sales/profitsummaryperperiod', params);
     totalprofit.value = profitRes.data.data ? profitRes.data.data.reduce((sum: number, val: number) => sum + val, 0) : 0;
 
   } catch (error) {
     console.error('Error fetching aggregated totals:', error);
-    // If filtered fetch fails, try to fetch all-time data
     try {
       const resStock = await axios.get('/api/stocks/totalStock', {
         params: { store: JSON.stringify({ id: getStoreId() }) }
@@ -653,8 +613,6 @@ async function fetchAggregatedTotals(params: any) {
   }
 }
 
-
-// Fetches the top-selling products for the selected period.
 async function fetchMostSoldProduct(params: any) {
   try {
     const res = await axios.post('/api/sales/mostsoldproductperperiod', params);
@@ -665,7 +623,6 @@ async function fetchMostSoldProduct(params: any) {
   }
 }
 
-// Fetches the top customers by quantity bought for the selected period.
 async function fetchTopCustomer(params: any) {
   try {
     const res = await axios.post('/api/sales/topcustomerperperiod', params);
@@ -676,62 +633,39 @@ async function fetchTopCustomer(params: any) {
   }
 }
 
-
 // --- Watchers ---
-// Watch for changes in selectedYear and reset other filters to default to entire year view
 watch(selectedYear, (newYear, oldYear) => {
   if (newYear !== oldYear) {
-    selectedMonth.value = null; // Reset month selection
-    selectedWeek.value = null;  // Reset week selection
-    // Always apply filters when year changes (including null to non-null and vice-versa)
+    selectedMonth.value = null;
+    selectedWeek.value = null;
     applyFilters();
   }
 });
 
-// Watch for changes in selectedMonth and reset selectedWeek
 watch(selectedMonth, (newMonth, oldMonth) => {
   if (newMonth !== oldMonth) {
-    selectedWeek.value = null; // Reset week selection when month changes
-    // Only apply filters if a year is selected (or was selected to clear month)
-    // or if the month is being cleared (newMonth === null)
-    if (selectedYear.value !== null || (newMonth === null && oldMonth !== null)) {
-      applyFilters();
-    }
+    selectedWeek.value = null;
+    applyFilters();
   }
 });
 
-// Watch for changes in selectedWeek
 watch(selectedWeek, (newWeek, oldWeek) => {
   if (newWeek !== oldWeek) {
-    // Only apply filters if a year is selected (or was selected to clear week)
-    // or if the week is being cleared (newWeek === null)
-    if (selectedYear.value !== null || (newWeek === null && oldWeek !== null)) {
-      applyFilters();
-    }
+    applyFilters();
   }
-}, { immediate: false }); // Do not run on initial component mount, only on actual changes
-
+}, { immediate: false });
 
 // --- Lifecycle Hook ---
 onMounted(async () => {
-  // Set isDataLoaded to false and start loading immediately on mount
   isDataLoaded.value = false;
   startLoading();
 
   try {
-    // Fetch available years first
     await fetchAvailableYearsFromApi();
-
-    // Then, apply filters based on initial selections (which might be null for year)
-    // This will trigger fetchAggregatedTotals, fetchMostSoldProduct, fetchTopCustomer
-    // and update currentFilterParams for child components.
     await applyFilters();
-
   } catch (error) {
     console.error('Initial dashboard data load failed:', error);
-    // Ensure UI reflects error or empty state
   } finally {
-    // Ensure loading state is stopped regardless of success or failure
     isDataLoaded.value = true;
     stopLoading();
   }
@@ -739,27 +673,22 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* Any specific styles for this component can go here */
 .v-data-table {
-  /* This often helps when v-data-table is inside a flex container stretching height */
   flex-grow: 1;
 }
 
-/* If your headers are not centered by default, you can add this global style or a class */
 .centered-headers .v-data-table__th {
   text-align: center !important;
 }
 
-/* Flexbox utilities for consistent height */
 .flex-grow-1 {
   flex-grow: 1;
 }
 
 .d-flex.flex-column > *:not(.v-card-title):not(.v-divider) {
-  min-height: 0; /* Allows flex items to shrink if needed */
+  min-height: 0;
 }
 
-/* Ensure data table inside flex container behaves correctly */
 .v-data-table {
   flex-grow: 1;
   display: flex;

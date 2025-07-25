@@ -3,7 +3,7 @@
     <v-card style="height: max-content;">
       <v-layout>
         <SideBarComponent />
-        <HeaderComponent />
+        <HeaderComponent :products="[]" :storeIdProp="null" /> 
 
         <v-main v-if="isDataLoaded" class="h-screen" style="min-height: max-content;">
           <v-row justify="space-between" class="d-flex justify-center px-5 py-5 pb-2">
@@ -56,7 +56,7 @@
                 :sort-by="[{ key: 'id', order: 'desc' }]"
               >
                 <template v-slot:item.contact="{ item }">
-                  {{ item.contact === 0 ? $t('customerVue.no_contact_label') : item.contact }}
+                  {{ item.contact === '0' ? $t('customerVue.no_contact_label') : item.contact }}
                 </template>
 
                 <template v-slot:item.created_at="{ item }">
@@ -115,7 +115,7 @@
                     <tr v-for="(customer, index) in selectedCustomer" :key="customer.id">
                       <td>{{ index + 1 }}</td>
                       <td>{{ customer.name }}</td>
-                      <td>{{ customer.contact === 0 ? $t('customerVue.no_contact_label') : customer.contact }}</td>
+                      <td>{{ customer.contact === '0' ? $t('customerVue.no_contact_label') : customer.contact }}</td>
                       <td>{{ new Date(customer.created_at).toLocaleDateString() }}</td>
                     </tr>
                   </tbody>
@@ -142,18 +142,19 @@
   </v-app>
 </template>
 
+---
+
 <script lang="ts" setup>
 import { ref, nextTick, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from '@/axios';
-import { useLoader } from '@/useLoader';
 import SideBarComponent from '@/components/cashier/CashierSideBarComponent.vue';
 import HeaderComponent from '@/components/cashier/CashierHeaderComponent.vue';
 import AppFooter from '@/components/AppFooter.vue';
 import { useI18n } from 'vue-i18n';
 
 // --- Composables and Utilities ---
-const { startLoading, stopLoading } = useLoader(); // Not used in the provided snippet but kept for completeness
+
 const router = useRouter();
 const { t, locale } = useI18n();
 
@@ -161,7 +162,7 @@ const { t, locale } = useI18n();
 interface Customer {
   id: number;
   name: string;
-  contact: string;
+  contact: string; // Ensure this matches your backend data type
   created_at: string;
 }
 
@@ -194,8 +195,7 @@ const formattedDate = computed(() => {
 const datePrint = computed(() => {
   const date = new Date();
   // Using 'en-CA' or 'fr-CA' (Canadian English/French) often yields YYYY-MM-DD consistently.
-  // Alternatively, you could use 'en-US' and then manually reverse the order if needed, but this is cleaner.
-  return new Intl.DateTimeFormat(`${locale.value}-CA`, { // Or 'fr-CA' if you prefer French locale specifically for formatting
+  return new Intl.DateTimeFormat(`${locale.value}-CA`, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit'
@@ -214,9 +214,9 @@ const filteredCustomer = computed<Customer[]>(() => {
 });
 
 const headers = computed(() => [
-  { title: t('customerVue.table_header_name'), value: 'name', align: 'start' },
-  { title: t('customerVue.table_header_contact'), value: 'contact', align: 'start'},
-  { title: t('customerVue.table_header_date_added'), value: 'created_at', align: 'center'}
+  { title: t('customerVue.table_header_name'), value: 'name', key: 'name', align: 'start' as const },
+  { title: t('customerVue.table_header_contact'), value: 'contact', key: 'contact', align: 'start' as const},
+  { title: t('customerVue.table_header_date_added'), value: 'created_at', key: 'created_at', align: 'center' as const}
 ]);
 
 // --- Methods ---
@@ -392,6 +392,7 @@ function printCustomers() {
                   z-index: -8;
                   -webkit-print-color-adjust: exact !important;
                   print-color-adjust: exact !important;
+                  filter: none !important;
               }
             </style>
           </head>
@@ -433,7 +434,7 @@ function downloadExcel() {
   const rows = selectedCustomer.value.map((customer, index) => [
     index + 1,
     customer.name,
-    customer.contact === '0' ? t('customerVue.no_contact_label') : customer.contact,
+    customer.contact === '0' ? t('customerVue.no_contact_label') : customer.contact, // Ensure '0' string comparison
     new Date(customer.created_at).toLocaleDateString()
   ]);
 
@@ -468,7 +469,7 @@ function downloadExcel() {
 onMounted(async () => {
   isDataLoaded.value = false;
   try {
-    // You could optionally use startLoading() and stopLoading() from useLoader here
+    // Uncomment these lines if you want to use the loader
     // startLoading();
     await Promise.all([
       fetchCustomers(),
@@ -479,6 +480,7 @@ onMounted(async () => {
     // Consider showing a generic error snackbar if both fail
   } finally {
     isDataLoaded.value = true;
+    // Uncomment this line if you use startLoading()
     // stopLoading();
   }
 });

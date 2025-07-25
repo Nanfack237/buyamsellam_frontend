@@ -56,7 +56,7 @@
                 :sort-by="[{ key: 'id', order: 'desc' }]"
               >
                 <template v-slot:item.contact="{ item }">
-                  {{ item.contact === 0 ? $t('customerVue.no_contact_label') : item.contact }}
+                  {{ !item.contact || item.contact === '0' ? $t('customerVue.no_contact_label') : item.contact }}
                 </template>
 
                 <template v-slot:item.created_at="{ item }">
@@ -115,7 +115,7 @@
                     <tr v-for="(customer, index) in selectedCustomer" :key="customer.id">
                       <td>{{ index + 1 }}</td>
                       <td>{{ customer.name }}</td>
-                      <td>{{ customer.contact === 0 ? $t('customerVue.no_contact_label') : customer.contact }}</td>
+                      <td>{{ !customer.contact || customer.contact === '0' ? $t('customerVue.no_contact_label') : customer.contact }}</td>
                       <td>{{ new Date(customer.created_at).toLocaleDateString() }}</td>
                     </tr>
                   </tbody>
@@ -152,16 +152,24 @@ import HeaderComponent from '@/components/HeaderComponent.vue';
 import AppFooter from '@/components/AppFooter.vue';
 import { useI18n } from 'vue-i18n';
 
+import type { VDataTable } from 'vuetify/components';
+
 // --- Composables and Utilities ---
-const { startLoading, stopLoading } = useLoader(); // Not used in the provided snippet but kept for completeness
+const { startLoading, stopLoading } = useLoader();
 const router = useRouter();
 const { t, locale } = useI18n();
 
+type VDataTableInternalHeaders = NonNullable<VDataTable['$props']['headers']>;
+
+// 2. Then, get the type of a single item from that NonNullable array
+type DataTableHeader<T> = VDataTableInternalHeaders[number] & {
+  value?: keyof T | 'data-table-expand' | 'data-table-select' | (string & {});
+};
 // --- Interfaces ---
 interface Customer {
   id: number;
   name: string;
-  contact: string;
+  contact: string; // Keep as string
   created_at: string;
 }
 
@@ -212,10 +220,11 @@ const filteredCustomer = computed<Customer[]>(() => {
   );
 });
 
-const headers = computed(() => [
-  { title: t('customerVue.table_header_name'), value: 'name', align: 'start' },
-  { title: t('customerVue.table_header_contact'), value: 'contact', align: 'start'},
-  { title: t('customerVue.table_header_date_added'), value: 'created_at', align: 'center'}
+// Corrected headers with 'as const' for align properties
+const headers = computed<DataTableHeader<Customer>[]>(() => [
+  { title: t('customerVue.table_header_name'), value: 'name', align: 'start' as const },
+  { title: t('customerVue.table_header_contact'), value: 'contact', align: 'start' as const},
+  { title: t('customerVue.table_header_date_added'), value: 'created_at', align: 'center' as const}
 ]);
 
 // --- Methods ---
@@ -429,7 +438,7 @@ function downloadExcel() {
   const rows = selectedCustomer.value.map((customer, index) => [
     index + 1,
     customer.name,
-    customer.contact === '0' ? t('customerVue.no_contact_label') : customer.contact,
+    !customer.contact || customer.contact === '0' ? t('customerVue.no_contact_label') : customer.contact, // Updated logic
     new Date(customer.created_at).toLocaleDateString()
   ]);
 
@@ -462,10 +471,9 @@ function downloadExcel() {
 
 // --- Lifecycle Hooks ---
 onMounted(async () => {
+  startLoading(); // Start loading
   isDataLoaded.value = false;
   try {
-    // You could optionally use startLoading() and stopLoading() from useLoader here
-    // startLoading();
     await Promise.all([
       fetchCustomers(),
       fetchStore()
@@ -475,7 +483,7 @@ onMounted(async () => {
     // Consider showing a generic error snackbar if both fail
   } finally {
     isDataLoaded.value = true;
-    // stopLoading();
+    stopLoading(); // Stop loading
   }
 });
 </script>

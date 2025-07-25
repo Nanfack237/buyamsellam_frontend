@@ -1,3 +1,4 @@
+
 <template>
   <v-app>
     <v-card>
@@ -32,7 +33,7 @@
                       </p>
                       <v-file-input
                         :label="$t('managerSettings.uploadStoreImage1')"
-                        accept="image/jpeg,image/png,image/bmp"
+                        accept="image/jpeg,image/png,image/bmp,image/jpg,image/gif"
                         @change="onFileSelected1"
                         prepend-icon=""
                         append-inner-icon="mdi-camera"
@@ -62,7 +63,7 @@
                       </p>
                       <v-file-input
                         :label="$t('managerSettings.uploadStoreImage2')"
-                        accept="image/jpeg,image/png,image/bmp"
+                        accept="image/jpeg,image/png,image/bmp,image/jpg,image/gif"
                         @change="onFileSelected2"
                         prepend-icon=""
                         append-inner-icon="mdi-camera"
@@ -197,7 +198,7 @@
                     </p>
                     <v-file-input
                       :label="$t('managerSettings.selectLogoImage')"
-                      accept="image/jpeg,image/png,image/bmp,image/svg+xml"
+                      accept="image/jpeg,image/png,image/bmp,image/jpg,image/gif,image/svg+xml"
                       @change="onFileSelectedLogo"
                       prepend-icon=""
                       append-inner-icon="mdi-upload"
@@ -222,11 +223,11 @@
                       <p class="text-caption text-grey-lighten-1 mt-2">{{ $t('managerSettings.noLogoAvailable') }}</p>
                     </div>
                   </v-col>
-                  <v-row class="justify-center py-5">
-                    <v-btn color="primary" class="my-4" type="submit" :loading="loading" size="large">
-                      {{ $t('managerSettings.saveLogo') }} <v-icon right class="mx-1">mdi-content-save</v-icon>
-                    </v-btn>
-                  </v-row>
+                </v-row>
+                <v-row class="justify-center py-5">
+                  <v-btn color="primary" class="my-4" type="submit" :loading="loading" size="large">
+                    {{ $t('managerSettings.saveLogo') }} <v-icon right class="mx-1">mdi-content-save</v-icon>
+                  </v-btn>
                 </v-row>
               </v-form>
             </v-card>
@@ -257,7 +258,7 @@
                       <v-icon left color="warning">mdi-alert-octagon</v-icon> {{ $t('managerSettings.stockAlert') }}
                     </p>
                     <v-text-field
-                      v-model="stockThreshold"
+                      v-model.number="stockThreshold"
                       :label="$t('managerSettings.globalThresholdQuantity')"
                       type="number"
                       variant="outlined"
@@ -271,7 +272,7 @@
                     />
                   </v-col>
                   <v-col cols="12" class="text-center">
-                    <v-btn color="primary" class="my-4" type="submit" @click="" :loading="loading" size="large">
+                    <v-btn color="primary" class="my-4" type="submit" :loading="loading" size="large">
                       {{ $t('managerSettings.save') }} <v-icon right class="mx-1">mdi-content-save</v-icon>
                     </v-btn>
                   </v-col>
@@ -319,6 +320,56 @@
     </v-card>
   </v-app>
 </template>
+
+<style scoped>
+.custom-border-card {
+  border-left: 5px solid #496896; /* Example color, adjust as needed */
+  border-radius: 8px;
+}
+
+.image-preview-container {
+  max-width: 100%;
+  height: auto; /* Adjust height as needed */
+  overflow: hidden; /* Ensures the image doesn't overflow */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.no-image-placeholder {
+  background-color: #f5f5f5;
+  border: 2px dashed #e0e0e0;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%; /* Ensure it takes full width of its container */
+}
+
+/* Specific styles for logo preview to ensure proper centering */
+.v-col.text-right .image-preview-container {
+  display: flex;
+  justify-content: flex-end; /* Align to the right as per your template's col class */
+  align-items: center;
+}
+
+.v-col.text-right .no-image-placeholder {
+    margin-left: auto; /* Pushes the placeholder to the right */
+    margin-right: 0;
+}
+
+/* Adjust image preview v-img sizing within its container */
+.image-preview-container .v-img {
+  width: 100%; /* Make v-img take full width of its container */
+  height: auto;
+}
+
+/* Override default Vuetify file input prepend-icon spacing */
+.v-file-input .v-input__prepend-outer {
+  margin-inline-end: 0; /* Remove default margin */
+}
+</style>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
@@ -382,7 +433,7 @@ const selectedLogoPreview = ref<string | null>(null);
 
 // --- Reactive State for Other Settings ---
 const dailySummaryEnabled = ref(false);
-const stockThreshold = ref(1);
+const stockThreshold = ref();
 const stockAlertEnabled = ref(false);
 
 // --- UI Feedback States ---
@@ -512,7 +563,7 @@ const fetchStoreInformation = async () => {
     const token = sessionStorage.getItem('access_token');
     if (!token) {
         showSnackbar(t('managerSettings.authRequired'), 'error');
-        router.push({ name: 'Login' });
+        router.push('/login');
         loading.value = false;
         return;
     }
@@ -555,7 +606,7 @@ const fetchStoreInformation = async () => {
         if (axios.isAxiosError(error) && error.response) {
             if (error.response.status === 401) {
                 showSnackbar(t('managerSettings.unauthorized'), 'error');
-                router.push({ name: 'Login' });
+                 router.push('/login');
             } else if (error.response.status === 404) {
                showSnackbar(t('managerSettings.noStoreFound'), 'warning');
                storeId.value = null; // Indicate no store found for this user
@@ -592,7 +643,7 @@ const updateStoreProfile = async () => {
   const token = sessionStorage.getItem('access_token');
   if (!token) {
     showSnackbar(t('managerSettings.authRequired'), 'error');
-    router.push({ name: 'Login' });
+     router.push('/login');
     loading.value = false;
     return;
   }
@@ -677,7 +728,7 @@ const updateStoreLogo = async () => {
     const token = sessionStorage.getItem('access_token');
     if (!token) {
         showSnackbar(t('managerSettings.authRequired'), 'error');
-        router.push({ name: 'Login' });
+        router.push('/login');
         loading.value = false;
         return;
     }
@@ -729,8 +780,11 @@ const updateStoreLogo = async () => {
  * Prompts the user to confirm the daily summary toggle.
  * @param {boolean} newStatus The proposed new status for daily summary (true for enabled, false for disabled).
  */
-const promptToggleDailySummary = (newStatus: boolean) => {
-  dailySummaryDialog.value.nextStatus = newStatus;
+const promptToggleDailySummary = (newStatus: boolean | null) => {
+  // The VSwitch might emit `null`. For a toggle, `null` often implies
+  // an 'off' or 'false' state, or it might just be a type quirk.
+  // We'll safely convert it to a boolean.
+  dailySummaryDialog.value.nextStatus = newStatus === true; // Ensures it's always boolean
   dailySummaryDialog.value.visible = true;
 };
 
@@ -750,7 +804,7 @@ const confirmDailySummaryToggle = async () => {
     const token = sessionStorage.getItem('access_token');
     if (!token) {
         showSnackbar(t('managerSettings.authRequired'), 'error');
-        router.push({ name: 'Login' });
+        router.push('/login');
         loading.value = false;
         return;
     }
@@ -843,7 +897,7 @@ const updateThresholdQuantity = async () => {
   const token = sessionStorage.getItem('access_token');
   if (!token) {
     showSnackbar(t('managerSettings.authRequired'), 'error');
-    router.push({ name: 'Login' });
+      router.push('/login');
     loading.value = false;
     return;
   }
@@ -851,7 +905,7 @@ const updateThresholdQuantity = async () => {
   try {
     const formData = new FormData();
     formData.append('_method', 'PUT');
-    formData.append('threshold_quantity', stockThreshold.value);
+    formData.append('threshold_quantity', String(stockThreshold.value));
     
     const response = await axios.post('/api/stocks/updatestockthreshold', formData, { // Adjust API endpoint as needed
       headers: {

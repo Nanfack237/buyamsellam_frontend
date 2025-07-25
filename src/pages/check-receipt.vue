@@ -226,8 +226,8 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, nextTick, onMounted, computed, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, nextTick, onMounted, computed } from 'vue';
+// import { useRouter } from 'vue-router'; // Removed as it's not used
 import axios from '@/axios';
 import { useLoader } from '@/useLoader';
 import SideBarComponent from '@/components/SideBarComponent.vue';
@@ -235,11 +235,18 @@ import HeaderComponent from '@/components/HeaderComponent.vue';
 import AppFooter from '@/components/AppFooter.vue';
 import { useI18n } from 'vue-i18n';
 
+import type { VDataTable } from 'vuetify/components';
+
 // --- Composables and Utilities ---
 const { startLoading, stopLoading } = useLoader();
-const router = useRouter();
 const { t, locale } = useI18n();
 
+type VDataTableInternalHeaders = NonNullable<VDataTable['$props']['headers']>;
+
+// 2. Then, get the type of a single item from that NonNullable array
+type DataTableHeader<T> = VDataTableInternalHeaders[number] & {
+  value?: keyof T | 'data-table-expand' | 'data-table-select' | (string & {});
+};
 // Adjust this backend URL if your Laravel API is hosted elsewhere
 const backendUrl = 'http://localhost:8000';
 
@@ -270,9 +277,6 @@ const products = ref<any[]>([]);
 const stocks = ref<any[]>([]);
 const users = ref<any[]>([]); // This array will hold user data including names
 const selectedSales = ref<any[]>([]); // Sales selected in the table (for print/excel)
-
-// Removed userName ref as it's no longer needed for display on receipt or table
-// const userName = ref(''); // No longer used for cashier name display
 
 const storeName = ref('');
 const storeLocation = ref('');
@@ -327,7 +331,7 @@ const receiptCashierName = computed(() => {
 });
 
 
-const headers = computed(() => [
+const headers = computed<DataTableHeader<any>[]>(() => [
   { title: t('saleTransactionsVue.tableHeaders.product'), value: 'productName', align: 'center' },
   { title: t('saleTransactionsVue.tableHeaders.costPrice'), value: 'costPrice', align: 'center' },
   { title: t('saleTransactionsVue.tableHeaders.sellingPrice'), value: 'selling_price', align: 'center' },
@@ -397,17 +401,6 @@ async function fetchUsers() {
   }
 }
 
-// Removed fetchUser() as it's no longer needed for getting the *connected* user's name for receipts
-// async function fetchUser() {
-//   try {
-//     const response = await axios.get('/api/me', { headers: getAuthHeaders() });
-//     userName.value = response.data.user.name;
-//   } catch (error) {
-//     console.error('Error fetching user data:', error);
-//     showSnackbar(t('saleTransactionsVue.snackbar.failedToLoadUserInformation'), 'error');
-//   }
-// }
-
 async function fetchSales() {
   try {
     const response = await axios.get('/api/sales', { headers: getAuthHeaders() });
@@ -433,11 +426,9 @@ async function fetchSales() {
 }
 
 async function fetchStore() {
-  
   const storeId = sessionStorage.getItem('storeId');
   const token = sessionStorage.getItem('access_token');
   try {
-    
     if (!token) {
       showSnackbar('Authentication required to fetch store details.', 'error');
       return;
@@ -702,29 +693,10 @@ function printSelectedSale() {
                text-align: center;
                z-index: 1000;
                font-size: 8px;
-               color: #666;
              }
-             .powered-by { font-style: italic; margin-top: 10px; }
-
-
-             .watermark {
-                 position: absolute;
-                 top: 50%;
-                 left: 50%;
-                 transform: translate(-50%, -50%) rotate(-45deg);
-                 font-size: 80px;
-                 color: rgba(0, 0, 0, 0.1);
-                 pointer-events: none;
-                 user-select: none;
-                 white-space: nowrap;
-                 z-index: -8;
-                 -webkit-print-color-adjust: exact !important;
-                 print-color-adjust: exact !important;
-             }
-           </style>
+            </style>
           </head>
           <body>
-            <div class="watermark">${ storeName.value}</div>
             ${printContent}
             <script>
               window.onload = function() {
@@ -744,6 +716,7 @@ function printSelectedSale() {
     }
   });
 }
+
 
 function downloadExcel() {
   if (selectedSales.value.length === 0) {
@@ -802,36 +775,13 @@ function downloadExcel() {
   }
 }
 
-// No need for a watch on other filters, as they are now removed.
-// We only watch the receiptCode to react to clearing it.
-watch(() => filters.value.receiptCode, (newValue) => {
-  if (newValue === '') { // If the receipt code input is cleared by the user
-    clearReceiptCodeSearch(); // Reset the state
-  }
-});
-
-// --- Lifecycle Hooks ---
 onMounted(async () => {
-  isDataLoaded.value = false;
   startLoading();
-  try {
-    await Promise.all([
-      fetchProducts(),
-      fetchStocks(),
-      fetchUsers(), // Make sure users are fetched BEFORE sales
-      fetchStore(),
-      // fetchUser() is removed as per requirements, no need to get the "connected" user's name
-    ]);
-    await fetchSales(); // This will now correctly map cashier names based on sale.user_id
-  } catch (error) {
-    console.error('Error during initial data fetch:', error);
-    showSnackbar(t('saleTransactionsVue.snackbar.failedToLoadAllData'), 'error');
-  } finally {
-    stopLoading();
-  }
+  await fetchStore();
+  await fetchProducts();
+  await fetchStocks();
+  await fetchUsers(); // Fetch users before sales
+  await fetchSales();
+  stopLoading();
 });
 </script>
-
-<style scoped>
-/* You can keep your existing styles here */
-</style>

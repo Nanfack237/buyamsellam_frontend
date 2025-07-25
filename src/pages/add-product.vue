@@ -222,7 +222,8 @@ interface CategoryOption {
   value: string | number; // value is category name (string) or -1 for 'Add New Category'
 }
 
-const selectedCategoryOption = ref<string | null>(null); // Binds to v-select
+// FIX: Allow selectedCategoryOption to be string, number, or null
+const selectedCategoryOption = ref<string | number | null>(null); // Binds to v-select
 const newCategory = ref<string>(''); // Holds value for new category input
 
 // Image files and their previews
@@ -319,7 +320,8 @@ const imageRules = computed(() => [
  * @param interpolation Optional object for message interpolation (e.g., { errors: '...' }).
  */
 function showSnackbar(messageKey: string, color: string, interpolation?: Record<string, string>) {
-  snackbarMessage.value = t(messageKey, interpolation);
+  // FIX: Provide a default empty object for interpolation if it's undefined
+  snackbarMessage.value = t(messageKey, interpolation || {});
   snackbarColor.value = color;
   snackbar.value = true;
 }
@@ -393,7 +395,7 @@ const fetchProductsForCategories = async () => {
   try {
     const token = sessionStorage.getItem('access_token');
     if (!token) {
-      showSnackbar('commonAddproduct.snackbar.authRequired', 'error');
+      showSnackbar(t('commonAddproduct.snackbar.authRequired'), 'error');
       router.push('/login');
       return;
     }
@@ -411,16 +413,16 @@ const fetchProductsForCategories = async () => {
       // The `categoryOptions` computed property will automatically re-evaluate
       // and update the dropdown based on `products.value`.
     } else {
-      showSnackbar('commonAddproduct.snackbar.failedToLoadCategories', 'error');
+      showSnackbar(t('commonAddproduct.snackbar.failedToLoadCategories'), 'error');
       console.error('Failed to load products for categories: Invalid response format', response.data);
     }
   } catch (error: any) {
     console.error('Error fetching products for categories:', error);
-    if (error.response && error.response.status === 401) {
-      showSnackbar('commonAddproduct.snackbar.authRequired', 'error');
+    if (axios.isAxiosError(error) && error.response && error.response.status === 401) {
+      showSnackbar(t('commonAddproduct.snackbar.authRequired'), 'error');
       router.push('/login');
     } else {
-      showSnackbar('commonAddproduct.snackbar.failedToLoadCategories', 'error');
+      showSnackbar(t('commonAddproduct.snackbar.failedToLoadCategories'), 'error');
     }
   }
 };
@@ -436,7 +438,7 @@ const addProduct = async () => {
   const { valid } = await productForm.value.validate(); // Trigger Vuetify validation
 
   if (!valid) {
-    showSnackbar('addProductVue.validation.formErrors', 'error');
+    showSnackbar(t('addProductVue.validation.formErrors'), 'error');
     isSubmitting.value = false;
     return;
   }
@@ -448,6 +450,7 @@ const addProduct = async () => {
 
     // Determine the final category value to send to the backend
     let finalCategoryValue: string | null = null;
+    // FIX: Direct comparison is now type-safe due to updated ref type
     if (selectedCategoryOption.value === -1) {
       // If "Add New Category" was selected, use the value from the `newCategory` text field
       finalCategoryValue = newCategory.value;
@@ -460,7 +463,7 @@ const addProduct = async () => {
       formData.append('category', finalCategoryValue); // Append the chosen category string
     } else {
       // This case should ideally be caught by the v-select's rules, but as a safeguard
-      showSnackbar('addProductVue.validation.categoryRequired', 'error');
+      showSnackbar(t('addProductVue.validation.categoryRequired'), 'error');
       isSubmitting.value = false;
       return;
     }
@@ -475,7 +478,7 @@ const addProduct = async () => {
 
     const token = sessionStorage.getItem('access_token');
     if (!token) {
-      showSnackbar('commonAddproduct.snackbar.authRequired', 'error');
+      showSnackbar(t('commonAddproduct.snackbar.authRequired'), 'error');
       router.push('/login');
       return;
     }
@@ -489,7 +492,7 @@ const addProduct = async () => {
     });
 
     if (response.data.success) {
-      showSnackbar('commonAddproduct.snackbar.productCreatedSuccess', 'success');
+      showSnackbar(t('commonAddproduct.snackbar.productCreatedSuccess'), 'success');
       // Reset form fields and validation state after successful submission
       name.value = '';
       description.value = '';
@@ -508,7 +511,7 @@ const addProduct = async () => {
       showSnackbar(response.data.error, 'error');
     } else {
       console.error('Unknown response from server:', response.data);
-      showSnackbar('commonAddproduct.snackbar.unknownError', 'error');
+      showSnackbar(t('commonAddproduct.snackbar.unknownError'), 'error');
     }
   } catch (error: any) {
     console.error('Error creating product:', error);
@@ -516,16 +519,16 @@ const addProduct = async () => {
       // Handle backend validation errors (e.g., Laravel's 422 Unprocessable Entity)
       if (error.response.data.errors) {
         const errorMessages = Object.values(error.response.data.errors).flat().join('; ');
-        showSnackbar('commonAddproduct.snackbar.validationError', 'error', { errors: errorMessages });
+        showSnackbar(t('commonAddproduct.snackbar.validationError'), 'error', { errors: errorMessages });
       } else if (error.response.data.message) {
         // Handle general API error messages returned by the backend
-        showSnackbar('commonAddproduct.snackbar.generalErrorMessage', 'error', { message: error.response.data.message });
+        showSnackbar(t('commonAddproduct.snackbar.generalErrorMessage'), 'error', { message: error.response.data.message });
       } else {
-        showSnackbar('commonAddproduct.snackbar.apiError', 'error');
+        showSnackbar(t('commonAddproduct.snackbar.apiError'), 'error');
       }
     } else {
       // Handle network errors or other client-side issues
-      showSnackbar('commonAddproduct.snackbar.networkError', 'error');
+      showSnackbar(t('commonAddproduct.snackbar.networkError'), 'error');
     }
   } finally {
     isSubmitting.value = false; // Deactivate loading state

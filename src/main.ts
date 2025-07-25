@@ -1,30 +1,30 @@
-/**
- * main.ts
- *
- * Bootstraps Vuetify and other plugins then mounts the App`
- */
+// main.ts
+//
+// Bootstraps Vuetify and other plugins then mounts the App`
+//
 
 // Plugins
-import { registerPlugins } from '@/plugins'
+import { registerPlugins } from '@/plugins'; // Assuming this correctly imports and registers your plugins
 
 // Components
-import App from './App.vue'
+import App from './App.vue';
 
-// Composables
+// Composables / Vue & Library Imports
 import { createApp } from 'vue';
-import router from './router';
-import axios from './axios';
+import axios from './axios'; // Assuming './axios' is a valid path to your axios instance
 import { createVuetify } from 'vuetify';
 import * as components from 'vuetify/components';
 import * as directives from 'vuetify/directives';
+import 'vuetify/styles'; // <--- THIS IS THE CRUCIAL LINE ADDED FOR VUETIFY STYLES AND TYPE RECOGNITION
+import '@mdi/font/css/materialdesignicons.css'; // <--- ADDED/CONFIRMED FOR MATERIAL DESIGN ICONS
 import { en, fr } from 'vuetify/locale'; // Import Vuetify's built-in locales
 
 // Import Vue I18n
 import { createI18n } from 'vue-i18n';
 
 // Import your custom language message files
-import enMessages from './locales/en.json';
-import frMessages from './locales/fr.json';
+import enMessages from './locales/en.json'; // Assuming this path is correct
+import frMessages from './locales/fr.json'; // Assuming this path is correct
 
 // --- Vue I18n Setup ---
 const i18nMessages = {
@@ -36,13 +36,15 @@ const storedLocale = localStorage.getItem('user_locale') || 'en';
 
 const i18n = createI18n({
   legacy: false,          // Use the Composition API style
-  locale: storedLocale,           // Default locale for your custom text
+  locale: storedLocale,   // Default locale for your custom text
   fallbackLocale: 'en',   // Fallback locale for custom text
   messages: i18nMessages, // Your application's custom messages
 });
 
 // --- Vuetify Setup ---
-const vuetify = createVuetify({
+// Removed the duplicate import for vuetify from './plugins/vuetify'
+// as createVuetify is used directly here.
+const vuetifyInstance = createVuetify({ // Renamed to vuetifyInstance to avoid conflict
   components,
   directives,
   locale: {
@@ -51,12 +53,18 @@ const vuetify = createVuetify({
     messages: { en, fr }, // Include Vuetify's own locale messages
   },
   // Other Vuetify configurations like themes, icons etc.
+  // For example, if you want to explicitly define the icon font:
+  // icons: {
+  //   defaultSet: 'mdi',
+  //   sets: {
+  //     mdi,
+  //   },
+  // },
 });
 
 const app = createApp(App);
 
-// Remove the access_token and store_id if the browser is closed without login
-
+// Your commented-out code for session management (leaving as is):
 // const lastUnload = parseInt(localStorage.getItem('lastUnload') || '0', 10);
 // const now = Date.now();
 // if(now - lastUnload > 1000) {
@@ -65,17 +73,16 @@ const app = createApp(App);
 // }
 
 // window.addEventListener('beforeunload', () =>{
-//       localStorage.setItem('lastUnload', Date.now().toString());
-      
+//     localStorage.setItem('lastUnload', Date.now().toString());
 // })
 
-app.use(axios);
-app.use(vuetify);
-app.use(i18n); 
+// --- Register Plugins / Use Services ---
+// Correct way to make Axios available globally: add to globalProperties
+app.config.globalProperties.$axios = axios; // Now accessible as this.$axios or inject('$axios')
 
-registerPlugins(app)
+app.use(vuetifyInstance); // Use the correctly named Vuetify instance
+app.use(i18n);
 
-app.mount('#app')
+registerPlugins(app); // Assuming this is defined in '@/plugins/index.ts' and exports registerPlugins
 
-
-
+app.mount('#app');

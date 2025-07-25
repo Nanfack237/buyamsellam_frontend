@@ -206,7 +206,16 @@ import HeaderComponent from '@/components/stockcontroller/StockHeaderComponent.v
 import AppFooter from '@/components/AppFooter.vue';
 import { useI18n } from 'vue-i18n'; // Import useI18n
 
+import type { VDataTable } from 'vuetify/components';
+
 const { t, locale } = useI18n(); // Use i18n
+
+type VDataTableInternalHeaders = NonNullable<VDataTable['$props']['headers']>;
+
+// 2. Then, get the type of a single item from that NonNullable array
+type DataTableHeader<T> = VDataTableInternalHeaders[number] & {
+  value?: keyof T | 'data-table-expand' | 'data-table-select' | (string & {});
+};
 
 // --- Interfaces ---
 interface Supplier {
@@ -281,7 +290,7 @@ const filteredSupplier = computed<Supplier[]>(() => {
   });
 });
 
-const headers = computed(() =>[
+const headers = computed<DataTableHeader<Supplier>[]>(() =>[
   { title: t('supplierListVue.tableHeaders.name'), value: 'name', align: 'start' },
   { title: t('supplierListVue.tableHeaders.address'), value: 'address', align: 'start' },
   { title: t('supplierListVue.tableHeaders.contact'), value: 'contact', align: 'start' },
@@ -326,16 +335,16 @@ const getLogoUrl = (logoPath: string | undefined | null) => {
  * Opens the Edit Supplier dialog and populates it with the selected supplier's data.
  * @param item The supplier object to be edited.
  */
-function openEditDialog(item: Supplier) {
-  // Deep copy the item to editedItem to prevent direct mutation of the table data
-  Object.assign(editedItem.value, item);
-  editDialog.value = true;
-  nextTick(() => {
-    if (supplierForm.value) {
-      supplierForm.value.resetValidation(); // Clear previous validation messages from a prior open/save
-    }
-  });
-}
+// function openEditDialog(item: Supplier) {
+//   // Deep copy the item to editedItem to prevent direct mutation of the table data
+//   Object.assign(editedItem.value, item);
+//   editDialog.value = true;
+//   nextTick(() => {
+//     if (supplierForm.value) {
+//       supplierForm.value.resetValidation(); // Clear previous validation messages from a prior open/save
+//     }
+//   });
+// }
 
 /**
  * Closes the Edit Supplier dialog and resets the form.
@@ -426,10 +435,10 @@ async function saveSupplier() {
  * Opens the delete confirmation dialog, setting the supplier to be deleted.
  * @param item The supplier object to be deleted.
  */
-function confirmDelete(item: Supplier) {
-  supplierToDelete.value = item;
-  confirmDeleteDialog.value = true;
-}
+// function confirmDelete(item: Supplier) {
+//   supplierToDelete.value = item;
+//   confirmDeleteDialog.value = true;
+// }
 
 /**
  * Executes the delete operation after user confirmation.

@@ -41,7 +41,7 @@
                       density="comfortable"
                       class="mb-2"
                     />
-                    
+
                     <v-select
                       :label="$t('addPurchaseVue.selectCostPriceLabel')"
                       v-model="selectedCostPriceOption"
@@ -77,7 +77,6 @@
                         />
                       </div>
                     </v-expand-transition>
-
                   </v-col>
 
                   <v-col cols="12" md="6">
@@ -150,7 +149,7 @@
                       </div>
                     </v-expand-transition>
                   </v-col>
-                
+
                   <v-col cols="12">
                     <v-text-field
                       v-model.number="selling_price"
@@ -161,7 +160,7 @@
                       :rules="[
                         v => (v !== null && v !== '') || $t('addPurchaseVue.validation.sellingPriceRequired'),
                         v => (v && v >= 1) || $t('addPurchaseVue.validation.sellingPriceMin'),
-                        v => (v && unit_price !== null && v >= unit_price) || $t('addPurchaseVue.validation.sellingPriceComparison')
+                        v => (v !== null && unit_price !== null && v >= unit_price) || $t('addPurchaseVue.validation.sellingPriceComparison')
                       ]"
                       prepend-inner-icon="mdi-cash"
                       density="comfortable"
@@ -197,6 +196,8 @@
   </v-app>
 </template>
 
+---
+
 <script lang="ts" setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
@@ -204,9 +205,9 @@ import axios from '@/axios';
 import SideBarComponent from '@/components/SideBarComponent.vue';
 import HeaderComponent from '@/components/HeaderComponent.vue';
 import AppFooter from '@/components/AppFooter.vue';
-import { useI18n } from 'vue-i18n'; // Corrected import from useI1n to useI18n
+import { useI18n } from 'vue-i18n';
 
-const { t, locale } = useI18n(); // Initialize useI18n
+const { t, locale } = useI18n();
 
 // --- Interfaces ---
 interface ProductItem {
@@ -224,7 +225,8 @@ interface StockItem {
   id: number;
   product_id: number;
   cost_price: number;
-  current_quantity: number; 
+  current_quantity: number;
+  quantity: number;
 }
 
 interface CostPriceOption {
@@ -240,7 +242,7 @@ const selectedProduct = ref<number | null>(null);
 const selectedSupplier = ref<number | null>(null); // Can be -1 for 'Add New Supplier'
 
 // Main state for the cost price dropdown selection - now null by default
-const selectedCostPriceOption = ref<number | null>(null); 
+const selectedCostPriceOption = ref<number | null>(null);
 // State for the manually entered unit price (only visible if selectedCostPriceOption is -1)
 const manualUnitPrice = ref<number | null>(null);
 
@@ -278,7 +280,11 @@ const supplierOptions = computed(() => {
 // Computed property for the actual unit_price value to be submitted
 const unit_price = computed<number | null>(() => {
   if (selectedCostPriceOption.value === -1) {
-    return manualUnitPrice.value;
+    // FIX: Explicitly convert manualUnitPrice.value to a string before parseFloat
+    const parsedManualPrice = parseFloat(String(manualUnitPrice.value || ''));
+    // Return null if NaN, otherwise return the parsed number.
+    return isNaN(parsedManualPrice) ? null : parsedManualPrice;
+
   } else if (selectedCostPriceOption.value !== null) {
     const selectedStock = stockLists.value.find(stock => stock.id === selectedCostPriceOption.value);
     return selectedStock ? selectedStock.cost_price : null;
@@ -294,7 +300,7 @@ const costPriceOptions = computed<CostPriceOption[]>(() => {
   }
 
   const filteredStocks = stockLists.value.filter(
-    stock => stock.product_id === selectedProduct.value 
+    stock => stock.product_id === selectedProduct.value
   );
 
   const options: CostPriceOption[] = [];
@@ -403,7 +409,7 @@ async function fetchSuppliers() {
 async function fetchStocks() {
   try {
     const token = sessionStorage.getItem('access_token');
-    const response = await axios.get<{ stocks: StockItem[] }>('/api/stocks', { 
+    const response = await axios.get<{ stocks: StockItem[] }>('/api/stocks', {
         headers: { 'Authorization': `Bearer ${token}` }
     });
     stockLists.value = response.data.stocks;
@@ -416,7 +422,7 @@ async function fetchStocks() {
 /**
  * Creates a new supplier.
  * @returns The ID of the newly created supplier, or null if creation failed.
-*/
+ */
 async function createNewSupplier(): Promise<number | null> {
   isSubmitting.value = true;
   try {
@@ -471,13 +477,13 @@ const submitPurchase = async () => {
   }
 
   // Validate unit_price (computed property) based on the selected option
-  if (unit_price.value === null || unit_price.value === '') {
+  if (unit_price.value === null) {
     showSnackbar(t('addPurchaseVue.validation.unitPriceRequiredSelection'), 'error');
     return;
   }
 
   isSubmitting.value = true;
-  let finalSupplierId = selectedSupplier.value;
+  let finalSupplierId: number | null = selectedSupplier.value; // Declare type for clarity
 
   // If "Add New Supplier" is selected, create the supplier first
   if (selectedSupplier.value === -1) {
@@ -491,20 +497,24 @@ const submitPurchase = async () => {
 
   try {
     const formData = new FormData();
-    formData.append('product_id', selectedProduct.value);
-    formData.append('supplier_id', finalSupplierId); // Use finalSupplierId
-    formData.append('unit_price', unit_price.value); // unit_price is now a computed property
+    // All values passed to formData.append() must be strings.
+    formData.append('product_id', String(selectedProduct.value || ''));
+    // Ensure finalSupplierId is converted to string
+    formData.append('supplier_id', String(finalSupplierId || ''));
+    // Convert computed unit_price to string
+    formData.append('unit_price', String(unit_price.value || ''));
 
     // Only include stock_id if an existing stock was selected (not -1 for new cost price)
     if (selectedCostPriceOption.value !== null && selectedCostPriceOption.value !== -1) {
         formData.append('stock_id', String(selectedCostPriceOption.value));
     }
-    
-    formData.append('quantity', quantity.value);
-    formData.append('selling_price', selling_price.value);
+
+    // Convert quantity and selling_price to string
+    formData.append('quantity', String(quantity.value || ''));
+    formData.append('selling_price', String(selling_price.value || ''));
 
     const token = sessionStorage.getItem('access_token');
-    const response = await axios.post<{ success?: string; message?: string; error?: string; errors?: Record<string, string[]> }>('/api/purchases/store', formData, {
+    const response = await axios.post<{ success?: string; message?: string; error?: string; status?: number; errors?: Record<string, string[]> }>('/api/purchases/store', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
         'Authorization': `Bearer ${token}`
@@ -512,12 +522,11 @@ const submitPurchase = async () => {
     });
 
     if (response.data.success) {
-      if (response.data.status = 201){
+      // Check for exact status code for more specific messaging
+      if (response.data.status === 201) { // Assuming 201 indicates new stock added
           showSnackbar(t('addPurchaseVue.snackbar.successDoingPurchaseAddedStock'), 'success');
-       
-      } else {
-        showSnackbar(t('addPurchaseVue.snackbar.successDoingPurchaseNewStock'), 'success');
-        
+      } else { // Assuming 200 for existing stock updated
+          showSnackbar(t('addPurchaseVue.snackbar.successDoingPurchaseNewStock'), 'success');
       }
       // Reset form fields
       selectedProduct.value = null;
@@ -530,8 +539,10 @@ const submitPurchase = async () => {
       newSupplierAddress.value = '';
       newSupplierContact.value = '';
       (purchaseForm.value as any).resetValidation();
-      
 
+      setTimeout(() => {
+        router.push('/purchase');
+      }, 2000);
       await fetchStocks(); // Re-fetch stocks to reflect changes
     } else {
       showSnackbar(response.data.error || response.data.message || t('addPurchaseVue.snackbar.errorDoingPurchase'), 'error');

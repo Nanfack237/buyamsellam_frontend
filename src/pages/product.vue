@@ -319,11 +319,20 @@ import SideBarComponent from '@/components/SideBarComponent.vue';
 import HeaderComponent from '@/components/HeaderComponent.vue';
 import AppFooter from '@/components/AppFooter.vue';
 
+import type { VDataTable } from 'vuetify/components';
+
 // Initialize i18n
 const { t, locale } = useI18n();
 
 // Define your backend URL (adjust if different in production)
 const backendUrl = 'http://localhost:8000';
+
+type VDataTableInternalHeaders = NonNullable<VDataTable['$props']['headers']>;
+
+// 2. Then, get the type of a single item from that NonNullable array
+type DataTableHeader<T> = VDataTableInternalHeaders[number] & {
+  value?: keyof T | 'data-table-expand' | 'data-table-select' | (string & {});
+};
 
 // --- Interfaces for Type Safety (Highly Recommended) ---
 interface Product {
@@ -420,13 +429,13 @@ const filteredProduct = computed<Product[]>(() => {
   });
 });
 
-const headers = computed(() => [
-  { title: t('products.tableHeaders.images'), value: 'images', align: 'center', sortable: false },
-  { title: t('products.tableHeaders.name'), value: 'name', align: 'start' },
-  { title: t('products.tableHeaders.category'), value: 'category', align: 'start' },
-  { title: t('products.tableHeaders.description'), value: 'description', align: 'start' },
-  { title: t('products.tableHeaders.dateAdded'), value: 'created_at', align: 'center' },
-  { title: t('products.tableHeaders.actions'), value: 'actions', align: 'center', sortable: false },
+const headers = computed<DataTableHeader<Product>[]>(() => [
+  { title: t('products.tableHeaders.images'), value: 'images', align: 'center' as const, sortable: false },
+  { title: t('products.tableHeaders.name'), value: 'name', align: 'start' as const },
+  { title: t('products.tableHeaders.category'), value: 'category', align: 'start' as const},
+  { title: t('products.tableHeaders.description'), value: 'description', align: 'start' as const},
+  { title: t('products.tableHeaders.dateAdded'), value: 'created_at', align: 'center' as const},
+  { title: t('products.tableHeaders.actions'), value: 'actions', align: 'center' as const, sortable: false },
 ]);
 
 const imageUploadRules = computed(() => [
@@ -453,8 +462,8 @@ const imageUploadRules = computed(() => [
  * @param color The color of the snackbar (e.g., 'success', 'error', 'warning').
  * @param interpolation Optional object for message interpolation.
  */
-function showSnackbar(messageKey: string, color: string, interpolation?: Record<string, string>) {
-  snackbarMessage.value = t(messageKey, interpolation);
+function showSnackbar(message: string, color: string) {
+  snackbarMessage.value = message;
   snackbarColor.value = color;
   snackbar.value = true;
 }
@@ -505,7 +514,7 @@ async function fetchProducts() {
   try {
     const token = sessionStorage.getItem('access_token');
     if (!token) {
-      showSnackbar('common.snackbar.authRequired', 'error');
+      showSnackbar(t('common.snackbar.authRequired'), 'error');
       // router.push('/login'); // Uncomment if you want to redirect to login
       isDataLoaded.value = true;
       return;
@@ -519,7 +528,7 @@ async function fetchProducts() {
     products.value = response.data.products;
   } catch (error) {
     console.error('Error fetching products:', error);
-    showSnackbar('common.snackbar.errorFetchingProducts', 'error');
+    showSnackbar(t('common.snackbar.errorFetchingProducts'), 'error');
   } finally {
     isDataLoaded.value = true; // Data fetching attempted, hide overlay
   }
@@ -532,7 +541,7 @@ async function fetchStore() {
   try {
     const token = sessionStorage.getItem('access_token');
     if (!token) {
-      showSnackbar('common.snackbar.authRequiredFetchStore', 'error');
+      showSnackbar(t('common.snackbar.authRequiredFetchStore'), 'error');
       return;
     }
     const response = await axios.get('/api/stores/show', {
@@ -649,7 +658,7 @@ function closeEditDialog() {
 async function saveProduct() {
   const { valid } = await editForm.value.validate(); // Validate the form
   if (!valid) {
-    showSnackbar('common.snackbar.formErrors', 'error');
+    showSnackbar(t('common.snackbar.formErrors'), 'error');
     return;
   }
 
@@ -692,7 +701,7 @@ async function saveProduct() {
 
     const token = sessionStorage.getItem('access_token');
     if (!token) {
-      showSnackbar('common.snackbar.authRequired', 'error');
+      showSnackbar(t('common.snackbar.authRequired'), 'error');
       // router.push('/login'); // Uncomment if you want to redirect to login
       return;
     }
@@ -705,27 +714,26 @@ async function saveProduct() {
     });
 
     if (response.data.success) {
-      showSnackbar('common.snackbar.successUpdatingProduct', 'success');
+      showSnackbar(t('common.snackbar.successUpdatingProduct'), 'success');
       await fetchProducts(); // Refresh the product list to show changes
       closeEditDialog(); // Close the dialog
     } else {
-      showSnackbar('common.snackbar.errorUpdatingProduct', 'error');
+      showSnackbar(t('common.snackbar.errorUpdatingProduct'), 'error');
     }
   } catch (error: any) {
     console.error('Error updating product:', error);
     if (error.response && error.response.data) {
       if (error.response.data.errors) {
         // Handle validation errors from Laravel
-        const errorMessages = Object.values(error.response.data.errors).flat().join('; ');
-        showSnackbar('common.snackbar.validationError', 'error', { errors: errorMessages });
+        showSnackbar(t('common.snackbar.validationError'), 'error');
       } else if (error.response.data.message) {
         // Handle general error messages from Laravel
-        showSnackbar('common.snackbar.generalErrorMessage', 'error', { message: error.response.data.message });
+        showSnackbar(t('common.snackbar.generalErrorMessage'), 'error');
       } else {
-        showSnackbar('common.snackbar.apiError', 'error');
+        showSnackbar(t('common.snackbar.apiError'), 'error');
       }
     } else {
-      showSnackbar('common.snackbar.networkError', 'error');
+      showSnackbar(t('common.snackbar.networkError'), 'error');
     }
   } finally {
     loading.value = false; // Deactivate loading state
@@ -759,7 +767,7 @@ async function deleteProduct() {
   try {
     const token = sessionStorage.getItem('access_token');
     if (!token) {
-      showSnackbar('common.snackbar.authRequired', 'error');
+      showSnackbar(t('common.snackbar.authRequired'), 'error');
       // router.push('/login'); // Uncomment if you want to redirect to login
       return;
     }
@@ -770,22 +778,22 @@ async function deleteProduct() {
     });
 
     if (response.status === 200) { // Assuming 200 OK for successful deletion
-      showSnackbar('common.snackbar.successDeletingProduct', 'success');
+      showSnackbar(t('common.snackbar.successDeletingProduct'), 'success');
       await fetchProducts(); // Refresh the product list
       closeConfirmDeleteDialog(); // Close the dialog
     } else {
-      showSnackbar('common.snackbar.errorDeletingProduct', 'error');
+      showSnackbar(t('common.snackbar.errorDeletingProduct'), 'error');
     }
   } catch (error: any) {
     console.error('Error deleting product:', error);
     if (error.response && error.response.data) {
       if (error.response.status === 409) { // Example: Conflict if product is referenced elsewhere
-        showSnackbar('common.snackbar.warningConflict', 'warning', { message: error.response.data.message || error.response.data.error });
+        showSnackbar(t('common.snackbar.warningConflict'), 'warning');
       } else {
-        showSnackbar('common.snackbar.generalErrorMessage', 'error', { message: error.response.data.message || 'An API error occurred during deletion.' });
+        showSnackbar(t('common.snackbar.generalErrorMessage'), 'error');
       }
     } else {
-      showSnackbar('common.snackbar.networkError', 'error');
+      showSnackbar(t('common.snackbar.networkError'), 'error');
     }
   } finally {
     loading.value = false; // Deactivate loading state
@@ -795,9 +803,10 @@ async function deleteProduct() {
 /**
  * Downloads the selected products as an Excel (CSV) file.
  */
+
 function downloadExcel() {
   if (selectedProduct.value.length === 0) {
-    showSnackbar('products.export.noSelectionError', 'error');
+    showSnackbar(t('products.export.noSelectionError'), 'error');
     return;
   }
 
@@ -835,23 +844,22 @@ function downloadExcel() {
   if (link.download !== undefined) {
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `${t('products.title') }_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `product_list_export_${new Date().toISOString().split('T')[0]}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    showSnackbar('products.export.successMessage', 'success');
+    showSnackbar(t('products.export.successMessage'), 'success');
   } else {
-    showSnackbar('products.export.browserSupportError', 'error');
+    showSnackbar(t('products.export.browserSupportError'), 'error');
   }
 }
-
 /**
  * Prints the selected products in a formatted report.
  */
 function printProducts() {
   if (!selectedProduct.value.length) {
-    showSnackbar('products.print.noSelectionError', 'error');
+    showSnackbar(t('products.print.noSelectionError'), 'error');
     return;
   }
 
@@ -859,7 +867,7 @@ function printProducts() {
   nextTick(() => {
     if (!printSection.value) {
       console.warn('Print section HTML element is not available.');
-      showSnackbar('products.print.unavailableError', 'error');
+      showSnackbar(t('products.print.unavailableError'), 'error');
       return;
     }
 
@@ -997,7 +1005,7 @@ function printProducts() {
       printWindow.document.close();
       printWindow.focus();
     } else {
-      showSnackbar('products.print.popupBlockerError', 'error');
+      showSnackbar(t('products.print.popupBlockerError'), 'error');
     }
   });
 }

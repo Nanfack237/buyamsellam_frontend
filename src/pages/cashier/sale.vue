@@ -3,7 +3,7 @@
     <v-card>
       <v-layout>
         <SideBarComponent />
-        <HeaderComponent />
+        <HeaderComponent :products="products" :store-id-prop="storeId" />
 
         <v-main v-if="isDataLoaded" class="h-screen" style="min-height: max-content;">
           <v-row justify="space-between" class="d-flex justify-center px-5 py-5 pb-2">
@@ -67,8 +67,8 @@
           </v-row>
           <v-row class="px-7">
             <v-card elevation="4" width="3000" class="my-2 py-2 px-5">
-             <p class="text-high-emphasis py-2">
-                  <b>{{ selectedSales.length || filteredSale.length }}</b>
+              <p class="text-high-emphasis py-2">
+                <b>{{ selectedSales.length || filteredSale.length }}</b>
                 {{ (selectedSales?.length ?? 0) === 1 ? t('saleTransactionsVue.transactionSingular') : t('saleTransactionsVue.transactionPlural') }}
               </p>
 
@@ -107,70 +107,6 @@
                   <v-icon>mdi-receipt-text-outline</v-icon> {{ $t('saleTransactionsVue.buttons.receipt') }}
                 </v-btn>
 
-                <!-- <v-btn color="secondary" :title="$t('saleTransactionsVue.buttons.print')" @click="printSelectedSale" class="mb-4">
-                  <v-icon>mdi-printer</v-icon> {{ $t('saleTransactionsVue.buttons.print') }}
-                </v-btn> -->
-
-                <!-- <div ref="printSection" class="d-none">
-                  <div class="report-container">
-                    <div class="report-header-section">
-                      <img v-if="storeLogoUrl" :src="storeLogoUrl" alt="Store Logo" class="report-logo">
-                      <div class="store-info">
-                        <h2 class="report-store-name">{{ storeName }}</h2>
-                        <p class="report-store-contact-info">{{ storeLocation }} | +237 {{ storeContact }}</p>
-                      </div>
-                    </div>
-
-                    <div class="report-title-section">
-                      <h3 class="report-title">{{ $t('saleTransactionsVue.printReport.reportTitle') }}</h3>
-                      <p class="report-date">{{ $t('saleTransactionsVue.receipt.date') }}: {{ new Date().toLocaleDateString() }}</p>
-                    </div>
-
-                    <div class="report-summary">
-                     
-                      <p>
-                        {{ t('saleTransactionsVue.printReport.totalEntries') }}: <b>{{ selectedSales.length }}</b> {{ selectedSales.length > 1 ? t('saleTransactionsVue.transactionPlural') : t('saleTransactionsVue.transactionSingular') }}
-                      </p>
-                  
-                    </div>
-
-                    <div class="report-table-section">
-                      <table class="report-table">
-                        <thead>
-                          <tr>
-                            <th>{{ $t('saleTransactionsVue.printReport.tableHeaders.sn') }}</th>
-                            <th class="text-left">{{ $t('saleTransactionsVue.printReport.tableHeaders.product') }}</th>
-                            <th class="text-left">{{ $t('saleTransactionsVue.printReport.tableHeaders.costPrice') }}</th>
-                            <th class="text-left">{{ $t('saleTransactionsVue.printReport.tableHeaders.sellingPrice') }}</th>
-                            <th class="text-left">{{ $t('saleTransactionsVue.printReport.tableHeaders.quantity') }}</th>
-                            <th class="text-left">{{ $t('saleTransactionsVue.printReport.tableHeaders.total') }}</th>
-                            <th class="text-left">{{ $t('saleTransactionsVue.printReport.tableHeaders.customer') }}</th>
-                            <th class="text-left">{{ $t('saleTransactionsVue.printReport.tableHeaders.cashier') }}</th>
-                            <th class="text-left">{{ $t('saleTransactionsVue.printReport.tableHeaders.date') }}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr v-for="(s, index) in selectedSales" :key="s.id">
-                            <td>{{ index + 1 }}</td>
-                            <td>{{ s.productName }}</td>
-                            <td>{{ formatNumberWithThousandsSeparator(s.costPrice) }}</td>
-                            <td>{{ formatNumberWithThousandsSeparator(s.selling_price) }}</td>
-                            <td>{{ s.quantity }}</td>
-                            <td>{{ formatNumberWithThousandsSeparator(s.total_price) }}</td>
-                            <td>{{ s.customer_name }}</td>
-                            <td>{{ s.cashierName }}</td>
-                            <td>{{ s.date }}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <div class="report-footer-section">
-                      <p class="powered-by">{{ $t('saleTransactionsVue.printReport.poweredBy') }}</p>
-                    </div>
-                  </div>
-                </div> -->
-
                 <div ref="printSectionReceipt" class="d-none">
                   <div class="receipt-container">
                     <div class="header-section">
@@ -183,7 +119,7 @@
 
                     <div class="receipt-title-section">
                       <h3 class="receipt-title">{{ $t('saleTransactionsVue.receipt.customerReceiptTitle') }}</h3>
-                      <p class="receipt-id">{{ $t('saleTransactionsVue.receipt.receiptId') }}  {{ getReceiptId() }}</p>
+                      <p class="receipt-id">{{ $t('saleTransactionsVue.receipt.receiptId') }} {{ getReceiptId() }}</p>
                     </div>
 
                     <div class="info-section">
@@ -244,24 +180,23 @@
 
 <script lang="ts" setup>
 import { ref, nextTick, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
+// import { useRouter } from 'vue-router'; // Fix 3: Removed useRouter
 import axios from '@/axios';
 import { useLoader } from '@/useLoader';
 import SideBarComponent from '@/components/cashier/CashierSideBarComponent.vue';
 import HeaderComponent from '@/components/cashier/CashierHeaderComponent.vue';
 import AppFooter from '@/components/AppFooter.vue';
-import { useI18n } from 'vue-i18n'; // Import useI18n
+import { useI18n } from 'vue-i18n';
 
 // --- Composables and Utilities ---
 const { startLoading, stopLoading } = useLoader();
-const router = useRouter();
-const { t, locale} = useI18n(); // Destructure t and tm for message pluralization
-
+// const router = useRouter(); // Fix 3: Removed as it's not used
+const { t, locale} = useI18n();
 
 // --- Helper Function for Logo URL ---
 const backendUrl = 'http://localhost:8000';
 
-const getLogoUrl = (logoPath: string | undefined | null) => {
+const getLogoUrl = (logoPath: string | undefined | null): string => {
   if (logoPath && !logoPath.startsWith('http') && !logoPath.includes('storage')) {
     return `${backendUrl}/storage/${logoPath}`;
   }
@@ -270,59 +205,60 @@ const getLogoUrl = (logoPath: string | undefined | null) => {
 
 // --- Reactive State ---
 const sales = ref<any[]>([]);
-const products = ref<any[]>([]);
+const products = ref<any[]>([]); // Keep products reactive for HeaderComponent prop
 const stocks = ref<any[]>([]);
-const users = ref<any[]>([]); // New: To store user data
+const users = ref<any[]>([]);
 const selectedSales = ref<any[]>([]);
 
-const userName = ref('');
-const storeName = ref('');
-const storeLocation = ref('');
-const storeContact = ref('');
-const storeLogoUrl = ref<string>(''); // Added for the store logo URL
+const userName = ref<string>('');
+const storeName = ref<string>('');
+const storeLocation = ref<string>('');
+const storeContact = ref<string>('');
+const storeLogoUrl = ref<string>('');
+const storeId = ref<string | null>(null); // Fix 1: Added storeId reactive variable
 
-const snackbar = ref(false);
-const snackbarMessage = ref('');
-const snackbarColor = ref('');
+const snackbar = ref<boolean>(false);
+const snackbarMessage = ref<string>('');
+const snackbarColor = ref<string>('');
 const snackbarTimeout = 3000;
 
-const hasReceiptCodeSearchActive = ref(false); // True when a search has been initiated
+// Fix 4: Removed hasReceiptCodeSearchActive as it's not used with the current filters
+// const hasReceiptCodeSearchActive = ref(false);
 
 const filters = ref({
   product: '',
   customer: '',
   date: ''
+  // Fix 4: Removed receiptCode from filters
+  // receiptCode: ''
 });
 
 const printSectionReceipt = ref<HTMLElement | null>(null);
+// const printSectionReport = ref<HTMLElement | null>(null); // Commented out for Print Report
 
-const isDataLoaded = ref(false);
+const isDataLoaded = ref<boolean>(false);
 
 // --- Computed Properties ---
-const formattedDate = computed(() => {
+const formattedDate = computed<string>(() => {
   const date = new Date();
   const options: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  // Use the current locale for date formatting
   return date.toLocaleDateString(locale.value, options);
 });
 
-const datePrint = computed(() => {
+const datePrint = computed<string>(() => {
   const date = new Date();
-  // Using 'en-CA' or 'fr-CA' (Canadian English/French) often yields YYYY-MM-DD consistently.
-  // Alternatively, you could use 'en-US' and then manually reverse the order if needed, but this is cleaner.
-  return new Intl.DateTimeFormat(`${locale.value}-CA`, { // Or 'fr-CA' if you prefer French locale specifically for formatting
+  return new Intl.DateTimeFormat(`${locale.value}-CA`, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit'
   }).format(date);
 });
 
-
-const grandTotal = computed(() => {
+const grandTotal = computed<number>(() => {
   return selectedSales.value.reduce((sum, s) => sum + s.total_price, 0);
 });
 
-const customerName = computed(() => {
+const customerName = computed<string>(() => {
   if (selectedSales.value.length > 0) {
     const uniqueCustomers = new Set(selectedSales.value.map(s => s.customer_name));
     return uniqueCustomers.size === 1 ? selectedSales.value[0].customer_name : t('saleTransactionsVue.tableCustomerMultiple');
@@ -331,17 +267,18 @@ const customerName = computed(() => {
 });
 
 const headers = computed(() => [
-  { title: t('saleTransactionsVue.tableHeaders.product'), value: 'productName', align: 'center' },
-  { title: t('saleTransactionsVue.tableHeaders.costPrice'), value: 'costPrice', align: 'center' },
-  { title: t('saleTransactionsVue.tableHeaders.sellingPrice'), value: 'selling_price', align: 'center' },
-  { title: t('saleTransactionsVue.tableHeaders.quantity'), value: 'quantity', align: 'center' },
-  { title: t('saleTransactionsVue.tableHeaders.total'), value: 'total_price', align: 'center' },
-  { title: t('saleTransactionsVue.tableHeaders.customer'), value: 'customer_name', align: 'center' },
-  { title: t('saleTransactionsVue.tableHeaders.method'), value: 'payment_method', align: 'center' },
-  { title: t('saleTransactionsVue.tableHeaders.date'), value: 'date', align: 'center' },
+  // Fix 2: Add 'as const' to align values
+  { title: t('saleTransactionsVue.tableHeaders.product'), value: 'productName', align: 'center' as const },
+  { title: t('saleTransactionsVue.tableHeaders.costPrice'), value: 'costPrice', align: 'center' as const },
+  { title: t('saleTransactionsVue.tableHeaders.sellingPrice'), value: 'selling_price', align: 'center' as const },
+  { title: t('saleTransactionsVue.tableHeaders.quantity'), value: 'quantity', align: 'center' as const },
+  { title: t('saleTransactionsVue.tableHeaders.total'), value: 'total_price', align: 'center' as const },
+  { title: t('saleTransactionsVue.tableHeaders.customer'), value: 'customer_name', align: 'center' as const },
+  { title: t('saleTransactionsVue.tableHeaders.method'), value: 'payment_method', align: 'center' as const },
+  { title: t('saleTransactionsVue.tableHeaders.date'), value: 'date', align: 'center' as const },
 ]);
 
-const filteredSale = computed(() => {
+const filteredSale = computed<any[]>(() => {
   const filtered = sales.value.filter((sale: any) => {
     const matchProduct = filters.value.product
       ? sale.productName.toLowerCase().includes(filters.value.product.toLowerCase())
@@ -353,24 +290,29 @@ const filteredSale = computed(() => {
       ? sale.date === filters.value.date
       : true;
 
+    // Fix 4: Removed condition that relied on filters.value.receiptCode
+    // if (hasReceiptCodeSearchActive.value && filters.value.receiptCode) {
+    //   return filters.value.receiptCode;
+    // }
+
     return matchProduct && matchCustomer && matchDate;
   });
   return filtered;
 });
 
 // --- Methods ---
-function showSnackbar(message: string, color: string) {
+function showSnackbar(message: string, color: string): void {
   snackbarMessage.value = message;
   snackbarColor.value = color;
   snackbar.value = true;
 }
 
-const getAuthHeaders = () => {
+const getAuthHeaders = (): { Authorization?: string } => {
   const token = sessionStorage.getItem('access_token');
   return token ? { 'Authorization': `Bearer ${token}` } : {};
 };
 
-async function fetchProducts() {
+async function fetchProducts(): Promise<void> {
   try {
     const res = await axios.get('/api/products', { headers: getAuthHeaders() });
     products.value = res.data.products;
@@ -380,7 +322,7 @@ async function fetchProducts() {
   }
 }
 
-async function fetchStocks() {
+async function fetchStocks(): Promise<void> {
   try {
     const res = await axios.get('/api/stocks', { headers: getAuthHeaders() });
     stocks.value = res.data.stocks;
@@ -390,7 +332,7 @@ async function fetchStocks() {
   }
 }
 
-async function fetchUsers() {
+async function fetchUsers(): Promise<void> {
   try {
     const res = await axios.get('/api/users', { headers: getAuthHeaders() });
     users.value = res.data.users;
@@ -400,50 +342,46 @@ async function fetchUsers() {
   }
 }
 
-async function fetchUser() {
+async function fetchUser(): Promise<void> {
   try {
     const response = await axios.get('/api/me', { headers: getAuthHeaders() });
     userName.value = response.data.user.name;
   } catch (error) {
-    console.error('Error fetching user data:', error);
+    console.error('Error fetching current user data:', error);
     showSnackbar(t('saleTransactionsVue.snackbar.failedToLoadUserInformation'), 'error');
   }
 }
 
-async function fetchSales() {
+async function fetchSales(): Promise<void> {
   try {
     const response = await axios.get('/api/sales/cashierlist', { headers: getAuthHeaders() });
     sales.value = response.data.sales.map((sale: any) => {
       const prod = products.value.find(p => p.id === sale.product_id);
       const sto = stocks.value.find(s => s.product_id === sale.product_id);
-    
 
       return {
         ...sale,
         productName: prod ? prod.name : 'Product Data Missing',
-        costPrice: sto ? sto.cost_price : 'N/A'
-        
+        costPrice: sto ? sto.cost_price : 'N/A',
       };
     });
   } catch (error) {
     console.error('Error fetching sales:', error);
-    showSnackbar(t('snackbar.error') + ' ' + t('errorFetchingData') + ' ' + t('noStoreIdAvailable'), 'error');
+    showSnackbar(`${t('snackbar.error')} ${t('errorFetchingData')} ${t('noStoreIdAvailable')}`, 'error');
   } finally {
     isDataLoaded.value = true;
   }
 }
 
-async function fetchStore() {
-  
-  const storeId = sessionStorage.getItem('storeId');
+async function fetchStore(): Promise<void> {
+  storeId.value = sessionStorage.getItem('storeId'); // Fix 1: Assign to reactive storeId
   const token = sessionStorage.getItem('access_token');
   try {
-    
     if (!token) {
       showSnackbar('Authentication required to fetch store details.', 'error');
       return;
     }
-    const response = await axios.get(`/api/stores/showstore/${storeId}`, {
+    const response = await axios.get(`/api/stores/showstore/${storeId.value}`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -462,10 +400,7 @@ function getReceiptId(): string {
   if (selectedSales.value.length > 0 && selectedSales.value[0].receipt_code) {
     return selectedSales.value[0].receipt_code;
   }
-  // If no sales are selected but a search was active, use the search term
-  if (hasReceiptCodeSearchActive.value && filters.value.receiptCode) {
-    return filters.value.receiptCode;
-  }
+  // Fix 4: Removed the conditional check for hasReceiptCodeSearchActive and filters.value.receiptCode
   return t('saleTransactionsVue.tableCustomerN_A');
 }
 
@@ -480,7 +415,106 @@ function formatNumberWithThousandsSeparator(value: number | string): string {
   return String(value);
 }
 
-function printReceipt() {
+// Consolidated print logic for both receipt and report (report functionality remains commented out)
+function printContent(contentRef: HTMLElement | null, title: string, isReceipt: boolean = true): void {
+  if (!contentRef) {
+    console.warn(`${title} print section is not ready.`);
+    showSnackbar(t('saleTransactionsVue.snackbar.printFunctionUnavailable'), 'error');
+    return;
+  }
+
+  const printContentHtml = contentRef.innerHTML;
+  const printWindow = window.open('', '_blank', 'width=900,height=700');
+
+  if (printWindow) {
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>${title}</title>
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; color: #333; font-size: 14px;}
+
+            /* General print styles */
+            .receipt-logo, .report-logo {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+              filter: none !important;
+            }
+
+            /* Receipt specific styles */
+            ${isReceipt ? `
+            .receipt-container { width: 300px; margin: 0 auto; padding: 15px; border: 1px dashed #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
+            .receipt-logo { max-width: 80px; max-height: 50px; margin-bottom: 10px; display: block !important; margin-left: auto; margin-right: auto; }
+            .store-name { font-size: 24px; margin-bottom: 5px; color: black; font-weight: bold; }
+            .store-contact-info { font-size: 12px; color: #777; margin-top: 0; line-height: 1.2; }
+            .receipt-title-section { text-align: center; margin: 20px 0 15px 0; border-top: 1px dashed #eee; padding-top: 15px;}
+            .receipt-title { font-size: 20px; margin-bottom: 5px; color: #555; }
+            .receipt-id { font-size: 12px; color: #888; }
+            .info-section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #eee; }
+            .info-section p { margin: 5px 0; font-size: 13px; }
+            .info-section strong { color: #000; }
+            .items-table-section { margin-bottom: 20px; }
+            .receipt-table { width: 100%; border-collapse: collapse; }
+            .receipt-table th, .receipt-table td { border: 0; padding: 8px 0; text-align: left; font-size: 13px;}
+            .receipt-table th { border-bottom: 1px solid #ddd; padding-bottom: 10px; font-weight: bold; color: #444;}
+            .receipt-table tbody tr:last-child td { border-bottom: none; }
+            .total-section { text-align: right; font-size: 18px; font-weight: bold; margin-top: 20px; padding-top: 15px; border-top: 2px solid #555; }
+            .total-section p { margin: 0; }
+            .footer-section { text-align: center; margin-top: 30px; font-size: 12px; color: #666; line-height: 1.5; }
+            .powered-by { font-style: italic; margin-top: 10px; }
+            ` : `
+            /* Report specific styles (currently not used in this version) */
+            .report-container { width: 100%; margin: 0 auto; padding: 20px; }
+            .report-header-section { text-align: center; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; }
+            .report-logo { max-width: 100px; max-height: 70px; margin-right: 20px; }
+            .report-store-name { font-size: 28px; margin: 0; color: black; font-weight: bold; }
+            .report-store-contact-info { font-size: 14px; color: #777; margin-top: 5px; }
+            .report-title-section { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #eee; padding-bottom: 15px; }
+            .report-title { font-size: 24px; margin-bottom: 10px; color: #333; }
+            .report-date { font-size: 14px; color: #666; }
+            .report-summary { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px dashed #eee; }
+            .report-summary p { margin: 5px 0; font-size: 15px; }
+            .report-table-section { margin-bottom: 30px; }
+            .report-table { width: 100%; border-collapse: collapse; }
+            .report-table th, .report-table td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 13px; }
+            .report-table th { background-color: #f2f2f2; font-weight: bold; color: #333; }
+            .report-table tr:nth-child(even) { background-color: #f9f9f9; }
+            .report-footer-section { text-align: center; margin-top: 40px; font-size: 13px; color: #666; }
+            `}
+
+            @media print {
+              body {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
+              .receipt-container, .report-container {
+                border: none;
+                box-shadow: none;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          ${printContentHtml}
+          <script>
+            window.onload = function() {
+              window.print();
+              window.onafterprint = function() {
+                window.close();
+              };
+            };
+          <\/script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+  } else {
+    showSnackbar(t('saleTransactionsVue.snackbar.popupsBlocked'), 'error');
+  }
+}
+
+function printReceipt(): void {
   if (selectedSales.value.length === 0) {
     showSnackbar(t('saleTransactionsVue.snackbar.printSelectOneItemReceipt'), 'error');
     return;
@@ -493,235 +527,25 @@ function printReceipt() {
   }
 
   nextTick(() => {
-    if (!printSectionReceipt.value) {
-      console.warn('printSectionReceipt is not ready for printing.');
-      showSnackbar(t('saleTransactionsVue.snackbar.printFunctionUnavailable'), 'error');
-      return;
-    }
-
-    const printContent = printSectionReceipt.value.innerHTML;
-    const printWindow = window.open('', '_blank', 'width=900,height=700');
-
-    const date = new Date().toLocaleDateString();
-    if (printWindow) {
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>customer_receipt_${date.replace(/\//g, '-')}</title>
-            <style>
-              body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; color: #333; font-size: 14px;}
-              .receipt-container { width: 300px; margin: 0 auto; padding: 15px; border: 1px dashed #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
-              .header-section { text-align: center; margin-bottom: 15px; }
-              .receipt-logo {
-                max-width: 80px;
-                max-height: 50px;
-                margin-bottom: 10px;
-                display: block !important;
-                margin-left: auto;
-                margin-right: auto;
-                visibility: visible !important;
-                opacity: 1 !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                filter: none !important;
-              }
-              .store-name { font-size: 24px; margin-bottom: 5px; color: black; font-weight: bold; }
-              .store-contact-info { font-size: 12px; color: #777; margin-top: 0; line-height: 1.2; }
-              
-              .receipt-title-section { text-align: center; margin: 20px 0 15px 0; border-top: 1px dashed #eee; padding-top: 15px;}
-              .receipt-title { font-size: 20px; margin-bottom: 5px; color: #555; }
-              .receipt-id { font-size: 12px; color: #888; }
-
-              .info-section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #eee; }
-              .info-section p { margin: 5px 0; font-size: 13px; }
-              .info-section strong { color: #000; }
-
-              .items-table-section { margin-bottom: 20px; }
-              .receipt-table { width: 100%; border-collapse: collapse; }
-              .receipt-table th, .receipt-table td { border: 0; padding: 8px 0; text-align: left; font-size: 13px;}
-              .receipt-table th { border-bottom: 1px solid #ddd; padding-bottom: 10px; font-weight: bold; color: #444;}
-              .receipt-table tbody tr:last-child td { border-bottom: none; }
-
-              .total-section { text-align: right; font-size: 18px; font-weight: bold; margin-top: 20px; padding-top: 15px; border-top: 2px solid #555; }
-              .total-section p { margin: 0; }
-
-              .footer-section { text-align: center; margin-top: 30px; font-size: 12px; color: #666; line-height: 1.5; }
-              .powered-by { font-style: italic; margin-top: 10px; }
-              
-              @media print {
-                body {
-                  -webkit-print-color-adjust: exact;
-                  print-color-adjust: exact;
-                }
-                .receipt-container {
-                  border: none;
-                  box-shadow: none;
-                }
-              }
-            </style>
-          </head>
-          <body>
-            ${printContent}
-            <script>
-              window.onload = function() {
-                window.print();
-                window.onafterprint = function() {
-                  window.close();
-                };
-              };
-            <\/script>
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
-      printWindow.focus();
-    } else {
-      showSnackbar(t('saleTransactionsVue.snackbar.popupsBlocked'), 'error');
-    }
+    printContent(printSectionReceipt.value, `customer_receipt_${new Date().toLocaleDateString().replace(/\//g, '-')}`, true);
   });
 }
 
-// function printSelectedSale() {
-//   if (selectedSales.value.length === 0) {
-//     showSnackbar(t('saleTransactionsVue.snackbar.printSelectOneItemReport'), 'error');
-//     return;
-//   }
+// Functionality for print report (kept commented out as requested)
+/*
+function printSelectedSale(): void {
+  if (selectedSales.value.length === 0) {
+    showSnackbar(t('saleTransactionsVue.snackbar.noSaleSelectedForPrint'), 'error');
+    return;
+  }
 
-//   nextTick(() => {
-//     if (!printSection.value) {
-//       console.warn('printSection is not ready for printing.');
-//       return;
-//     }
+  nextTick(() => {
+    printContent(printSectionReport.value, `sales_report_${new Date().toLocaleDateString().replace(/\//g, '-')}`, false);
+  });
+}
+*/
 
-//     const printContent = printSection.value.innerHTML;
-//     const printWindow = window.open('', '_blank', 'width=900,height=700');
-
-//     const date = new Date().toLocaleDateString().split('T')[0]
-//     if (printWindow) {
-//       printWindow.document.write(`
-//         <html>
-//           <head>
-//             <title>sale_report_${date}</title>
-//              <style>
-//               body { font-family: Arial, sans-serif; padding: 10px; }
-//               .report-container { width: 100%; margin: 0 auto; padding: 0px; }
-              
-//               .report-header-section { 
-//                 text-align: center; 
-//                 margin-bottom: 10px; 
-//                 display: flex;
-//                 align-items: center;
-//                 justify-content: center;
-//                 flex-wrap: wrap;
-//               }
-//               .report-logo {
-//                 max-width: 100px;
-//                 max-height: 80px;
-//                 margin-right: 15px;
-//                 margin-bottom: 10px;
-//                 display: block !important;
-//                 visibility: visible !important;
-//                 opacity: 1 !important;
-//                 -webkit-print-color-adjust: exact !important;
-//                 print-color-adjust: exact !important;
-//                 filter: none !important;
-//               }
-//               .store-info {
-//                 display: flex;
-//                 flex-direction: column;
-//                 align-items: flex-start;
-//               }
-//               .report-store-name { 
-//                 font-size: 28px; 
-//                 margin-bottom: 5px; 
-//                 color: #333; 
-//                 font-weight: bold; 
-//                 text-align: left;
-//               }
-//               .report-store-contact-info { 
-//                 font-size: 14px; 
-//                 color: #777; 
-//                 margin-top: 0; 
-//                 line-height: 1.5; 
-//                 text-align: left;
-//               }
-
-//               .report-title-section { text-align: center; margin: 15px 0 10px 0; border-top: 1px solid #ddd; padding-top: 10px;}
-//               .report-title { font-size: 22px; margin-bottom: 10px; color: #444; }
-//               .report-date { font-size: 14px; color: #888; }
-
-//               .report-summary { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #eee; font-size: 14px; }
-//               .report-summary strong { color: #000; }
-              
-//               .report-table-section { margin-bottom: 30px; margin-top: 30px; }
-//               .report-table { width: 100%; border-collapse: collapse; }
-//               .report-table th, .report-table td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 13px;}
-//               .report-table th { background-color: #f5f5f5; font-weight: bold; color: #333;}
-//               .report-table tbody tr:nth-child(even) { background-color: #f9f9f9; }
-
-//               .report-summary { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #eee; font-size: 14px; }
-//               .report-summary strong { color: #000; }
-
-//               .report-table-section { margin-bottom: 30px; margin-top: 30px; }
-//               .report-table { width: 100%; border-collapse: collapse; }
-//               .report-table th, .report-table td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 13px;}
-//               .report-table th { background-color: #f5f5f5; font-weight: bold; color: #333;}
-//               .report-table tbody tr:nth-child(even) { background-color: #f9f9f9; }
-
-//               .report-footer-section { 
-//                 margin-top: 10px;
-//                 position: fixed; 
-//                 bottom: 0;
-//                 left: 0;
-//                 width: 100%;
-//                 padding: 15px;
-//                 text-align: center;
-//                 z-index: 1000; 
-//                 font-size: 8px; 
-//                 color: #666;
-//               }
-//               .powered-by { font-style: italic; margin-top: 10px; }
-              
-              
-//               .watermark {
-//                   position: absolute;
-//                   top: 50%;
-//                   left: 50%;
-//                   transform: translate(-50%, -50%) rotate(-45deg);
-//                   font-size: 80px;
-//                   color: rgba(0, 0, 0, 0.1);
-//                   pointer-events: none;
-//                   user-select: none;
-//                   white-space: nowrap;
-//                   z-index: -8;
-//                   -webkit-print-color-adjust: exact !important;
-//                   print-color-adjust: exact !important;
-//               }
-//             </style>
-//           </head>
-//           <body>
-//             <div class="watermark">${ storeName.value}</div>
-//             ${printContent}
-//             <script>
-//               window.onload = function() {
-//                 window.print();
-//                 window.onafterprint = function() {
-//                   window.close();
-//                 };
-//               };
-//             <\/script>
-//           </body>
-//         </html>
-//       `);
-//       printWindow.document.close();
-//       printWindow.focus();
-//     } else {
-//       showSnackbar(t('saleTransactionsVue.snackbar.popupsBlocked'), 'error');
-//     }
-//   });
-// }
-
-function downloadExcel() {
+function downloadExcel(): void {
   if (selectedSales.value.length === 0) {
     showSnackbar(t('saleTransactionsVue.snackbar.noSaleSelectedForExport'), 'error');
     return;
@@ -735,6 +559,7 @@ function downloadExcel() {
     t('saleTransactionsVue.printReport.tableHeaders.quantity'),
     t('saleTransactionsVue.printReport.tableHeaders.total'),
     t('saleTransactionsVue.printReport.tableHeaders.customer'),
+    t('saleTransactionsVue.printReport.tableHeaders.cashier'),
     t('saleTransactionsVue.printReport.tableHeaders.date')
   ];
 
@@ -800,5 +625,14 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* You can add or adjust your scoped styles here */
+/* For printing, ensure critical styles are inline or in the <style> tag passed to printWindow */
 
+/* Example: Adjusting for the print styles if needed */
+.receipt-logo, .report-logo {
+  /* Ensure images are visible when printing */
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+  filter: none !important; /* Prevents filters from being applied in print */
+}
 </style>

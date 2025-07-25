@@ -83,7 +83,7 @@
               </p>
               <v-divider class="border-opacity-100" color="grey-lighten-1"></v-divider>
 
-              <v-data-table :items="stores" :headers="headers" item-value="id" :key="index" class="centered-headers"
+              <v-data-table :items="stores" :headers="headers" item-value="id" class="centered-headers"
                 hide-default-footer :sort-by="[{ key: 'id', order: 'asc' }]">
                 <template #item.index="{ index }">
                   {{ index + 1 }}
@@ -142,8 +142,7 @@
             <div class="report-container">
               <div class="report-header-section">
                 <img v-if="userImageUrl" :src="userImageUrl" alt="User Image" class="user-image-print">
-                
-              </div>
+                </div>
 
               <div class="report-title-section">
                 <h3 class="report-title">{{ t('settings.report_title_store_list') }}</h3>
@@ -213,6 +212,8 @@ import axios from '@/axios';
 import { useLoader } from '@/useLoader';
 import { useI18n } from 'vue-i18n';
 
+import type { VDataTable } from 'vuetify/components';
+
 // --- Composables and Utilities ---
 const router = useRouter();
 const loading = ref(false); // Make sure this is reactive and controls the overlay
@@ -221,6 +222,25 @@ const snackbarMessage = ref('');
 const snackbarColor = ref('');
 const snackbarTimeout = 3000; // Define snackbarTimeout
 
+type VDataTableInternalHeaders = NonNullable<VDataTable['$props']['headers']>;
+
+// 2. Then, get the type of a single item from that NonNullable array
+type DataTableHeader<T> = VDataTableInternalHeaders[number] & {
+  value?: keyof T | 'data-table-expand' | 'data-table-select' | (string & {});
+};
+
+interface Store {
+  id: number;
+  name: string;
+  category: string;
+  location: string;
+  contact: string;
+  status: number;
+  tempStatus: boolean;
+  created_at: string; // Add created_at for potential date info in export and print
+  logo: string | null; // Add logo path
+  description: string; // Added description based on your print template
+}
 
 const { startLoading, stopLoading } = useLoader();
 const { t, locale } = useI18n(); // Initialize useI18n
@@ -286,28 +306,17 @@ const changePassword = async () => {
 }
 
 // --- Store Settings Data ---
-const stores = ref([]);
-interface Store {
-  id: number;
-  name: string;
-  category: string;
-  location: string;
-  contact: string;
-  status: number;
-  tempStatus: boolean;
-  created_at: string; // Add created_at for potential date info in export and print
-  logo: string | null; // Add logo path
-  description: string; // Added description based on your print template
-}
+const stores = ref<Store[]>([]); // **FIXED: Explicitly type the ref with your Store interface**
+
 
 // Headers are now a computed property to react to locale changes
-const headers = computed(() => [
+const headers = computed<DataTableHeader<Store>[]>(() => [ // **FIXED: Use 'Store' instead of 'store'**
   { title: t('settings.sn'), value: 'index', sortable: false },
-  { title: t('settings.name'), value: 'name', align: 'center' },
-  { title: t('settings.category'), value: 'category', align: 'center' },
-  { title: t('settings.location'), value: 'location', align: 'center' },
-  { title: t('settings.contact'), value: 'contact', align: 'center' },
-  { title: t('settings.description'), value: 'description', align: 'center' }, // Added description header
+  { title: t('settings.name'), value: 'name', align: 'center' as const},
+  { title: t('settings.category'), value: 'category', align: 'center' as const},
+  { title: t('settings.location'), value: 'location', align: 'center' as const},
+  { title: t('settings.contact'), value: 'contact', align: 'center' as const},
+  { title: t('settings.description'), value: 'description', align: 'center' as const}, // Added description header
   { title: t('settings.actions'), value: 'actions', sortable: false },
 ]);
 
@@ -319,7 +328,7 @@ async function fetchStores() {
     stores.value = response.data.stores.map((store: any) => ({
       ...store,
       tempStatus: store.status === 1
-    }));
+    })) as Store[]; // **FIXED: Cast the mapped array to Store[] to ensure type safety**
   } catch (error) {
     console.error('Error fetching stores:', error);
     showSnackbar(t('settings.errorLoadingStores'), 'error');

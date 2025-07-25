@@ -133,9 +133,9 @@
             </v-card>
           </v-row>
 
-          <v-row cols="12" class="px-4 py-2 my-4" align="stretch" style="height: max-content;"> 
-            <v-col cols="12" md="6" sm="12" class="py-3 mb-0 d-flex" > 
-              <v-card elevation="4" class="flex-grow-1 " > 
+          <v-row cols="12" class="px-4 py-2 my-4" align="stretch" style="height: max-content;">
+            <v-col cols="12" md="6" sm="12" class="py-3 mb-0 d-flex" >
+              <v-card elevation="4" class="flex-grow-1 " >
                 <v-card-item >
                   <p class="font-weight-medium py-2 my-0">
                     {{ $t('adminDashboard.sections.weeklyActiveUsers') }}
@@ -148,8 +148,8 @@
               </v-card>
             </v-col>
 
-            <v-col cols="12" md="3" sm="6" class="d-flex"> 
-              <v-card elevation="4" class="flex-grow-1"> 
+            <v-col cols="12" md="3" sm="6" class="d-flex">
+              <v-card elevation="4" class="flex-grow-1">
                 <v-card-item >
                   <p class="font-weight-medium py-2">
                     {{ $t('adminDashboard.sections.topUsers') }}
@@ -162,8 +162,8 @@
               </v-card>
             </v-col>
 
-            <v-col cols="12" md="3" sm="6" class="d-flex"> 
-              <v-card elevation="4" class="flex-grow-1" > 
+            <v-col cols="12" md="3" sm="6" class="d-flex">
+              <v-card elevation="4" class="flex-grow-1" >
                 <v-card-item >
                   <p class="font-weight-medium py-2">
                     {{ $t('adminDashboard.sections.topStores') }}
@@ -203,6 +203,15 @@ import ChartByStoresPerWeek from '@/components/admin/ChartByStoresPerWeek.vue';
 import ChartByUsersPerWeek from '@/components/admin/ChartByUsersPerWeek.vue';
 import ChartByActiveUsersPerWeek from '@/components/admin/ChartByActiveUsersPerWeek.vue';
 
+// --- Interfaces (Add or refine these for better type safety) ---
+interface DataTableHeader {
+  title: string;
+  value: string;
+  align?: 'start' | 'end' | 'center'; // Explicitly define allowed align values
+  sortable?: boolean;
+  // Add other properties that your headers might have, e.g., key, width, etc.
+}
+
 // --- Composables and Utilities ---
 const { startLoading, stopLoading } = useLoader();
 const { t, locale } = useI18n();
@@ -214,14 +223,14 @@ const totalUsers = ref<number | null>(null);
 const totalStores = ref<number | null>(null);
 const totalActiveUsers = ref<number | null>(null);
 const totalActiveStores = ref<number | null>(null);
-const topUsers = ref<any[]>([]);
-const topStores = ref<any[]>([]);
+const topUsers = ref<any[]>([]); // Consider a more specific type if possible, e.g., User[]
+const topStores = ref<any[]>([]); // Consider a more specific type if possible, e.g., Store[]
 const isDataLoaded = ref(false);
 
 const snackbar = ref<boolean>(false);
 const snackbarMessage = ref<string>('');
 const snackbarColor = ref<string>('');
-const snackbarTimeout = 3000;
+// const snackbarTimeout = 3000; // Removed: Declared but its value is never read.
 
 // --- Computed Properties ---
 const formattedDate = computed(() => {
@@ -259,13 +268,13 @@ const formattedDate = computed(() => {
 });
 
 // Headers for top users table
-const topUsersHeaders = computed(() => ([
+const topUsersHeaders = computed<DataTableHeader[]>(() => ([
   { title: t('adminDashboard.tableHeaders.email'), value: 'email', align: 'center' },
   { title: t('adminDashboard.tableHeaders.storeLimit'), value: 'store_limit', align: 'center' },
 ]));
 
 // Headers for top stores table
-const topStoresHeader = computed(() => ([
+const topStoresHeader = computed<DataTableHeader[]>(() => ([
   { title: t('adminDashboard.tableHeaders.name'), value: 'name', align: 'center' },
   { title: t('adminDashboard.tableHeaders.totalSales'), value: 'total_sales', align: 'center' },
 ]));
@@ -291,11 +300,11 @@ function goToStores() {
   router.push('/admin/stores');
 }
 
-function goToSalePage() {
-  router.push('/admin/sale');
-}
-// --- Methods ---
+// function goToSalePage() { // Removed: Declared but its value is never read.
+//   router.push('/admin/sale');
+// }
 
+// --- Methods ---
 async function fetchUsers() {
     try {
         const token = sessionStorage.getItem('access_token');
@@ -314,36 +323,32 @@ async function fetchUsers() {
         console.error('Error fetching users:', error);
         showSnackbar(t('userVue.failed_to_load_users'), 'error');
     }
-
 }
 
 async function fetchStores() {
     try {
-    const res = await axios.get('/api/admin/storelist');
-    totalStores.value = res.data.stores.length;
-
+      const res = await axios.get('/api/admin/storelist');
+      totalStores.value = res.data.stores.length;
     } catch (error) {
-    console.error('Error fetching stores:', error);
+      console.error('Error fetching stores:', error);
     }
-
 }
 
 async function fetchActiveUsers() {
     try {
-    const res = await axios.get('/api/admin/activeusers');
-    totalActiveUsers.value = res.data.users.length;
+      const res = await axios.get('/api/admin/activeusers');
+      totalActiveUsers.value = res.data.users.length;
     } catch (error) {
-    console.error('Error fetching active users:', error);
+      console.error('Error fetching active users:', error);
     }
-
 }
 
 async function fetchActiveStores() {
- try {
+  try {
     const res = await axios.get('/api/admin/activestores');
     totalActiveStores.value = res.data.stores.length;
     } catch (error) {
-     console.error('Error fetching active stores:', error);
+      console.error('Error fetching active stores:', error);
     }
 }
 
@@ -354,7 +359,6 @@ async function fetchTopUsers() {
     } catch (error) {
         console.error('Error fetching top user:', error);
     }
-
 }
 
 async function fetchTopStores() {
@@ -367,9 +371,8 @@ async function fetchTopStores() {
 }
 
 // --- Lifecycle Hook ---
-
 onMounted(async () => {
-    startLoading(); // Activate global loader if applicable
+    startLoading();
     try {
         await Promise.all([
             fetchUsers(),
@@ -381,14 +384,11 @@ onMounted(async () => {
         ]);
     } catch (error) {
         console.error('Error loading dashboard data:', error);
-        // Handle overall dashboard data loading error here
     } finally {
-        isDataLoaded.value = true; // Set data loaded flag regardless of success/failure
-        stopLoading(); // Deactivate global loader
+        isDataLoaded.value = true;
+        stopLoading();
     }
-
 });
-
 </script>
 
 <style scoped>

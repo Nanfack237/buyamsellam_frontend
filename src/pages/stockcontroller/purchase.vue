@@ -87,7 +87,11 @@
                     {{ formatNumberWithThousandsSeparator(item.unit_price) }}
                 </template>
                 
-          
+                <template v-slot:item.actions="{ item }">
+                  <v-icon size="small" @click="viewPurchase(item)">
+                    mdi-eye
+                  </v-icon>
+                </template>
               </v-data-table>
             </v-card>
             <v-row justify="end" class="my-1">
@@ -183,10 +187,19 @@ import HeaderComponent from '@/components/stockcontroller/StockHeaderComponent.v
 import AppFooter from '@/components/AppFooter.vue';
 import { useI18n } from 'vue-i18n';
 
+import type { VDataTable } from 'vuetify/components';
+
 // --- Composables and Utilities ---
 const { startLoading, stopLoading } = useLoader();
 const router = useRouter();
 const { t, locale } = useI18n(); // Destructure t and locale for reactive changes
+
+type VDataTableInternalHeaders = NonNullable<VDataTable['$props']['headers']>;
+
+// 2. Then, get the type of a single item from that NonNullable array
+type DataTableHeader<T> = VDataTableInternalHeaders[number] & {
+  value?: keyof T | 'data-table-expand' | 'data-table-select' | (string & {});
+};
 
 const backendUrl = 'http://localhost:8000'; // Make sure this matches your Laravel backend URL
 
@@ -197,6 +210,17 @@ const getLogoUrl = (logoPath: string | undefined | null) => {
   }
   return logoPath || 'https://via.placeholder.com/60x60?text=No+Image'; // This is the fallback
 };
+
+interface Purchase {
+  id: number;
+  productName: string;
+  unit_price: Number;
+  quantity: number;
+  supplierName: string;
+  recordedBy: string; // Original path from DB for image 1
+  date: string;
+  
+}
 
 // --- Reactive State ---
 const purchases = ref<any[]>([]);
@@ -246,12 +270,13 @@ const datePrint = computed(() => {
 });
 
 // THIS IS THE KEY CHANGE: Make headers a computed property
-const headers = computed(() => [
+const headers = computed<DataTableHeader<Purchase>[]>(() => [
   { title: t('purchaseTransactionsVue.productHeader'), value: 'productName', align: 'center' },
   { title: t('purchaseTransactionsVue.costPriceHeader'), value: 'unit_price', align: 'center' },
   { title: t('purchaseTransactionsVue.quantityHeader'), value: 'quantity', align: 'center' },
   { title: t('purchaseTransactionsVue.supplierHeader'), value: 'supplierName', align: 'center' },
   { title: t('purchaseTransactionsVue.dateHeader'), value: 'date', align: 'center' },
+  { title: t('common.actions'), value: 'actions', sortable: false, align: 'center' }, // Added actions header
 ]);
 
 const filteredPurchase = computed(() => {
@@ -279,7 +304,8 @@ const filteredPurchase = computed(() => {
  * @param interpolation Optional object for message interpolation.
  */
 function showSnackbar(messageKey: string, color: string, interpolation?: Record<string, string>) {
-  snackbarMessage.value = t(messageKey, interpolation);
+  // Fix for TS2769: Provide an empty object as a fallback if interpolation is undefined
+  snackbarMessage.value = t(messageKey, interpolation || {}); 
   snackbarColor.value = color;
   snackbar.value = true;
 }
@@ -392,7 +418,7 @@ async function fetchPurchase() {
         ...purchase,
         productName: prod ? prod.name : t('purchaseTransactionsVue.productDataMissing'),
         supplierName: supp ? supp.name : t('purchaseTransactionsVue.supplierDataMissing')
-       
+        
       };
     });
   } catch (error: any) {
@@ -426,7 +452,7 @@ function printPurchases() {
     const printWindow = window.open('', '_blank', 'width=900,height=700');
 
     const date =  new Date().toLocaleDateString();
-    if (printWindow) {
+    if (printWindow) { // Check if printWindow is not null
       printWindow.document.write(`
         <html>
           <head>

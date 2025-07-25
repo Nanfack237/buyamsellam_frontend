@@ -1,233 +1,247 @@
 <template>
   <v-app>
-    <v-card>
-      <v-layout>
-        <SideBarComponent />
-        <HeaderComponent />
+    <SideBarComponent />
+    <HeaderComponent :products="products" /> <v-main class="main-content">
+      <v-container fluid class="page-wrapper">
+        <v-row>
+          <v-col cols="12">
+            <h1 class="page-title">{{ t('saleTransactionsVue.pageTitle') }}</h1>
+          </v-col>
+        </v-row>
 
-        <v-main v-if="isDataLoaded" class="h-screen" style="min-height: max-content;">
-          <v-row justify="space-between" class="d-flex justify-center px-5 py-5 pb-2">
-            <v-col cols="auto">
-              <p class="text-high-emphasis text-h6">
-                {{ $t('saleTransactionsVue.titleCheckReceipt') }}
-              </p>
-            </v-col>
+        <v-row class="mb-4">
+          <v-col cols="12" md="6">
+            <v-card class="elevation-2 pa-4">
+              <v-card-title class="headline">{{ t('saleTransactionsVue.searchFilterTitle') }}</v-card-title>
+              <v-card-text>
+                <v-row align="center">
+                  <v-col cols="12" sm="8">
+                    <v-text-field
+                      v-model="filters.receiptCode"
+                      :label="t('saleTransactionsVue.receiptCodePlaceholder')"
+                      prepend-inner-icon="mdi-receipt"
+                      variant="outlined"
+                      clearable
+                      @keyup.enter="searchSalesByReceiptCode"
+                      @click:clear="clearReceiptCodeSearch"
+                    ></v-text-field>
+                  </v-col>
+                  <v-col cols="12" sm="4">
+                    <v-btn
+                      color="primary"
+                      block
+                      @click="searchSalesByReceiptCode"
+                      :disabled="!filters.receiptCode.trim()"
+                    >
+                      <v-icon left>mdi-magnify</v-icon>
+                      {{ t('saleTransactionsVue.searchButton') }}
+                    </v-btn>
+                  </v-col>
+                </v-row>
+              </v-card-text>
+            </v-card>
+          </v-col>
+          <v-col cols="12" md="6" v-if="displaySalesTable">
+            <v-card class="elevation-2 pa-4">
+              <v-card-title class="headline">{{ t('saleTransactionsVue.actionsTitle') }}</v-card-title>
+              <v-card-text>
+                <v-row>
+                  <v-col cols="12" sm="6">
+                    <v-btn
+                      color="teal"
+                      block
+                      @click="printReceipt"
+                      :disabled="selectedSales.length === 0"
+                    >
+                      <v-icon left>mdi-printer</v-icon>
+                      {{ t('saleTransactionsVue.printReceiptButton') }}
+                    </v-btn>
+                  </v-col>
+                  <v-col cols="12" sm="6">
+                    <v-btn
+                      color="orange"
+                      block
+                      @click="printSelectedSale"
+                      :disabled="selectedSales.length === 0"
+                    >
+                      <v-icon left>mdi-file-pdf-box</v-icon>
+                      {{ t('saleTransactionsVue.printReportButton') }}
+                    </v-btn>
+                  </v-col>
+                  <v-col cols="12">
+                    <v-btn
+                      color="green"
+                      block
+                      @click="downloadExcel"
+                      :disabled="selectedSales.length === 0"
+                    >
+                      <v-icon left>mdi-file-excel</v-icon>
+                      {{ t('saleTransactionsVue.downloadExcelButton') }}
+                    </v-btn>
+                  </v-col>
+                </v-row>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
 
-            <v-col cols="auto">
-              <p class="text-right text-medium-emphasis">
-                {{ formattedDate }}
-              </p>
-            </v-col>
-            <v-divider class="border-opacity-100" color="grey-lighten-1"></v-divider>
-          </v-row>
+        <v-row v-if="displaySalesTable">
+          <v-col cols="12">
+            <v-card class="elevation-2">
+              <v-card-title class="d-flex align-center pe-2">
+                <v-icon icon="mdi-receipt-text"></v-icon> &nbsp;
+                {{ t('saleTransactionsVue.saleTransactionsTitle') }}
+              </v-card-title>
 
-          <v-row justify="end" class="d-flex px-5 pt-2">
-            <v-col cols="12" sm="6" md="4" lg="3">
-              <v-text-field
-                v-model="filters.receiptCode"
-                density="compact"
-                :label="$t('saleTransactionsVue.searchByReceiptCode')"
-                prepend-inner-icon="mdi-receipt"
-                variant="solo-filled"
-                flat
-                hide-details
-                single-line
-                clearable
-                @keyup.enter="searchSalesByReceiptCode"
-                @click:clear="clearReceiptCodeSearch"
-              >
-                <template v-slot:append-inner>
-                  <v-btn
-                    icon="mdi-magnify"
-                    variant="text"
-                    size="small"
-                    @click="searchSalesByReceiptCode"
-                  ></v-btn>
-                </template>
-              </v-text-field>
-            </v-col>
-          </v-row>
-
-          <v-row class="px-7" v-if="displaySalesTable">
-            <v-card elevation="4" width="3000" class="my-2 py-2 px-5">
-              <p class="text-high-emphasis py-2">
-                <b>{{ selectedSales.length || filteredSale.length }}</b>
-                {{ (selectedSales?.length ?? 0) === 1 ? t('saleTransactionsVue.transactionSingular') : t('saleTransactionsVue.transactionPlural') }}
-              </p>
-
-              <v-divider class="border-opacity-100" color="grey-lighten-1"></v-divider>
+              <v-divider></v-divider>
 
               <v-data-table
-                :items="filteredSale"
-                :headers="headers"
-                item-value="id"
-                class="centered-headers"
-                show-select
                 v-model="selectedSales"
-                return-object
-                :sort-by="[{ key: 'id', order: 'desc' }]"
+                :headers="headers"
+                :items="filteredSale"
+                :loading="!isDataLoaded"
+                item-value="id"
+                show-select
+                class="elevation-1"
+                :no-data-text="t('saleTransactionsVue.tableNoData')"
               >
-                <template v-slot:item.costPrice="{ item }">
-                  {{ formatNumberWithThousandsSeparator(item.costPrice) }}
-                </template>
-
-                <template v-slot:item.selling_price="{ item }">
-                  {{ formatNumberWithThousandsSeparator(item.selling_price) }}
-                </template>
-
                 <template v-slot:item.total_price="{ item }">
-                  {{ formatNumberWithThousandsSeparator(item.total_price) }}
+                  {{ formatNumberWithThousandsSeparator(item.total_price) }} CFA
+                </template>
+                <template v-slot:item.costPrice="{ item }">
+                  {{ formatNumberWithThousandsSeparator(item.costPrice) }} CFA
+                </template>
+                <template v-slot:item.selling_price="{ item }">
+                  {{ formatNumberWithThousandsSeparator(item.selling_price) }} CFA
                 </template>
               </v-data-table>
             </v-card>
-            <v-row justify="end" class="my-1">
-              <v-col cols="auto">
-                <v-btn color="green-darken-2" variant="flat" :title="$t('saleTransactionsVue.buttons.excel')" @click="downloadExcel" class="mb-4">
-                  <v-icon>mdi-microsoft-excel</v-icon> {{ $t('saleTransactionsVue.buttons.excel') }}
-                </v-btn>
+          </v-col>
+        </v-row>
+      </v-container>
 
-                <v-btn color="primary" :title="$t('saleTransactionsVue.buttons.receipt')" @click="printReceipt" class="mb-4 mx-2">
-                  <v-icon>mdi-receipt-text-outline</v-icon> {{ $t('saleTransactionsVue.buttons.receipt') }}
-                </v-btn>
+      <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="snackbarTimeout">
+        {{ snackbarMessage }}
+      </v-snackbar>
 
-                <v-btn color="secondary" :title="$t('saleTransactionsVue.buttons.print')" @click="printSelectedSale" class="mb-4">
-                  <v-icon>mdi-printer</v-icon> {{ $t('saleTransactionsVue.buttons.print') }}
-                </v-btn>
+      <div ref="printSection" style="display: none;">
+        <div class="report-container">
+          <div class="report-header-section">
+            <img :src="storeLogoUrl" alt="Store Logo" class="report-logo" v-if="storeLogoUrl" />
+            <div class="store-info">
+              <h1 class="report-store-name">{{ storeName }}</h1>
+              <p class="report-store-contact-info">{{ storeLocation }} | {{ storeContact }}</p>
+            </div>
+          </div>
+          <div class="report-title-section">
+            <h2 class="report-title">{{ t('saleTransactionsVue.printReport.reportTitle') }}</h2>
+            <p class="report-date">{{ formattedDate }}</p>
+          </div>
 
-                <div ref="printSection" class="d-none">
-                  <div class="report-container">
-                    <div class="report-header-section">
-                      <template v-if="storeLogoUrl && storeLogoUrl !== 'https://via.placeholder.com/60x60?text=No+Image'">
-                        <img :src="storeLogoUrl" alt="Store Logo" class="receipt-logo">
-                      </template>
-                      <div class="store-info">
-                        <h2 class="report-store-name">{{ storeName }}</h2>
-                        <p class="report-store-contact-info">{{ storeLocation }} | +237 {{ storeContact }}</p>
-                      </div>
-                    </div>
+          <div class="report-summary">
+            <p><strong>{{ t('saleTransactionsVue.printReport.receiptID') }}:</strong> {{ getReceiptId() }}</p>
+            <p><strong>{{ t('saleTransactionsVue.printReport.customerName') }}:</strong> {{ customerName }}</p>
+            <p><strong>{{ t('saleTransactionsVue.printReport.cashierName') }}:</strong> {{ receiptCashierName }}</p>
+            <p><strong>{{ t('saleTransactionsVue.printReport.totalSales') }}:</strong> {{ formatNumberWithThousandsSeparator(grandTotal) }} CFA</p>
+          </div>
 
-                    <div class="report-title-section">
-                      <h3 class="report-title">{{ $t('saleTransactionsVue.printReport.checkReceiptreportTitle') }}</h3>
-                      <p class="report-date">{{ $t('saleTransactionsVue.receipt.date') }}: {{ new Date().toLocaleDateString() }}</p>
-                    </div>
+          <div class="report-table-section">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>{{ t('saleTransactionsVue.printReport.tableHeaders.sn') }}</th>
+                  <th>{{ t('saleTransactionsVue.printReport.tableHeaders.product') }}</th>
+                  <th>{{ t('saleTransactionsVue.printReport.tableHeaders.costPrice') }}</th>
+                  <th>{{ t('saleTransactionsVue.printReport.tableHeaders.sellingPrice') }}</th>
+                  <th>{{ t('saleTransactionsVue.printReport.tableHeaders.quantity') }}</th>
+                  <th>{{ t('saleTransactionsVue.printReport.tableHeaders.total') }}</th>
+                  <th>{{ t('saleTransactionsVue.printReport.tableHeaders.customer') }}</th>
+                  <th>{{ t('saleTransactionsVue.printReport.tableHeaders.cashier') }}</th>
+                  <th>{{ t('saleTransactionsVue.printReport.tableHeaders.date') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(sale, index) in selectedSales" :key="sale.id">
+                  <td>{{ index + 1 }}</td>
+                  <td>{{ sale.productName }}</td>
+                  <td>{{ formatNumberWithThousandsSeparator(sale.costPrice) }} CFA</td>
+                  <td>{{ formatNumberWithThousandsSeparator(sale.selling_price) }} CFA</td>
+                  <td>{{ sale.quantity }}</td>
+                  <td>{{ formatNumberWithThousandsSeparator(sale.total_price) }} CFA</td>
+                  <td>{{ sale.customer_name }}</td>
+                  <td>{{ sale.cashierName }}</td>
+                  <td>{{ sale.date }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="report-footer-section">
+            <p>{{ t('saleTransactionsVue.printReport.thankYou') }}</p>
+            <p class="powered-by">Powered by POS System - {{ datePrint }}</p>
+          </div>
+        </div>
+      </div>
 
-                    <div class="report-summary">
-                      <p>
-                        {{ t('saleTransactionsVue.printReport.totalEntries') }}: <b>{{ selectedSales.length }}</b> {{ selectedSales.length > 1 ? t('saleTransactionsVue.transactionPlural') : t('saleTransactionsVue.transactionSingular') }}
-                      </p>
-                    </div>
+      <div ref="printSectionReceipt" style="display: none;">
+        <div class="receipt-container">
+          <div class="header-section">
+            <img :src="storeLogoUrl" alt="Store Logo" class="receipt-logo" v-if="storeLogoUrl" />
+            <h1 class="store-name">{{ storeName }}</h1>
+            <p class="store-contact-info">{{ storeLocation }}</p>
+            <p class="store-contact-info">{{ storeContact }}</p>
+          </div>
 
-                    <div class="report-table-section">
-                      <table class="report-table">
-                        <thead>
-                          <tr>
-                            <th>{{ $t('saleTransactionsVue.printReport.tableHeaders.sn') }}</th>
-                            <th class="text-left">{{ $t('saleTransactionsVue.printReport.tableHeaders.product') }}</th>
-                            <th class="text-left">{{ $t('saleTransactionsVue.printReport.tableHeaders.costPrice') }}</th>
-                            <th class="text-left">{{ $t('saleTransactionsVue.printReport.tableHeaders.sellingPrice') }}</th>
-                            <th class="text-left">{{ $t('saleTransactionsVue.printReport.tableHeaders.quantity') }}</th>
-                            <th class="text-left">{{ $t('saleTransactionsVue.printReport.tableHeaders.total') }}</th>
-                            <th class="text-left">{{ $t('saleTransactionsVue.printReport.tableHeaders.customer') }}</th>
-                            <th class="text-left">{{ $t('saleTransactionsVue.printReport.tableHeaders.cashier') }}</th>
-                            <th class="text-left">{{ $t('saleTransactionsVue.printReport.tableHeaders.date') }}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr v-for="(s, index) in selectedSales" :key="s.id">
-                            <td>{{ index + 1 }}</td>
-                            <td>{{ s.productName }}</td>
-                            <td>{{ formatNumberWithThousandsSeparator(s.costPrice) }}</td>
-                            <td>{{ formatNumberWithThousandsSeparator(s.selling_price) }}</td>
-                            <td>{{ s.quantity }}</td>
-                            <td>{{ formatNumberWithThousandsSeparator(s.total_price) }}</td>
-                            <td>{{ s.customer_name }}</td>
-                            <td>{{ s.cashierName }}</td>
-                            <td>{{ s.date }}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
+          <div class="receipt-title-section">
+            <h2 class="receipt-title">{{ t('saleTransactionsVue.printReceipt.receiptTitle') }}</h2>
+            <p class="receipt-id">ID: {{ getReceiptId() }}</p>
+          </div>
 
-                    <div class="report-footer-section">
-                      <p class="powered-by">{{ $t('saleTransactionsVue.printReport.poweredBy') }}</p>
-                    </div>
-                  </div>
-                </div>
+          <div class="info-section">
+            <p><strong>{{ t('saleTransactionsVue.printReceipt.date') }}:</strong> {{ formattedDate }}</p>
+            <p><strong>{{ t('saleTransactionsVue.printReceipt.customer') }}:</strong> {{ customerName }}</p>
+            <p><strong>{{ t('saleTransactionsVue.printReceipt.cashier') }}:</strong> {{ receiptCashierName }}</p>
+          </div>
 
-                <div ref="printSectionReceipt" class="d-none">
-                  <div class="receipt-container">
-                    <div class="header-section">
-                      <template v-if="storeLogoUrl && storeLogoUrl !== 'https://via.placeholder.com/60x60?text=No+Image'">
-                        <img :src="storeLogoUrl" alt="Store Logo" class="receipt-logo">
-                      </template>
-                      <h2 class="store-name">{{ storeName }}</h2>
-                      <p class="store-contact-info">{{ storeLocation }} | {{ storeContact }}</p>
-                    </div>
+          <div class="items-table-section">
+            <table class="receipt-table">
+              <thead>
+                <tr>
+                  <th>{{ t('saleTransactionsVue.printReceipt.tableHeaders.product') }}</th>
+                  <th>{{ t('saleTransactionsVue.printReceipt.tableHeaders.qty') }}</th>
+                  <th>{{ t('saleTransactionsVue.printReceipt.tableHeaders.price') }}</th>
+                  <th>{{ t('saleTransactionsVue.printReceipt.tableHeaders.total') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="sale in selectedSales" :key="sale.id">
+                  <td>{{ sale.productName }}</td>
+                  <td>{{ sale.quantity }}</td>
+                  <td>{{ formatNumberWithThousandsSeparator(sale.selling_price) }}</td>
+                  <td>{{ formatNumberWithThousandsSeparator(sale.total_price) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-                    <div class="receipt-title-section">
-                      <h3 class="receipt-title">{{ $t('saleTransactionsVue.receipt.customerReceiptTitle') }}</h3>
-                      <p class="receipt-id">{{ $t('saleTransactionsVue.receipt.receiptId') }} {{ getReceiptId() }}</p>
-                    </div>
+          <div class="total-section">
+            <p>{{ t('saleTransactionsVue.printReceipt.grandTotal') }}: {{ formatNumberWithThousandsSeparator(grandTotal) }} CFA</p>
+          </div>
 
-                    <div class="info-section">
-                      <p><strong>{{ $t('saleTransactionsVue.receipt.customer') }} :</strong> {{ customerName }}</p>
-                      <p><strong>{{ $t('saleTransactionsVue.receipt.cashier') }} :</strong> {{ receiptCashierName }}</p> 
-                      <p><strong>{{ $t('saleTransactionsVue.receipt.date') }}: </strong>{{ datePrint }}</p>
-                    </div>
+          <div class="footer-section">
+            <p>{{ t('saleTransactionsVue.printReceipt.thankYou') }}</p>
+            <p class="powered-by">Powered by POS System - {{ datePrint }}</p>
+          </div>
+        </div>
+      </div>
+    </v-main>
 
-                    <div class="items-table-section">
-                      <table density="compact" class="receipt-table">
-                        <thead>
-                          <tr>
-                            <th>{{ $t('saleTransactionsVue.receipt.tableHeaders.sn') }}</th>
-                            <th>{{ $t('saleTransactionsVue.receipt.tableHeaders.product') }}</th>
-                            <th>{{ $t('saleTransactionsVue.receipt.tableHeaders.quantity') }}</th>
-                            <th>{{ $t('saleTransactionsVue.receipt.tableHeaders.unitPrice') }}</th>
-                            <th>{{ $t('saleTransactionsVue.receipt.tableHeaders.total') }}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr v-for="(s, index) in selectedSales" :key="s.id">
-                            <td>{{ index + 1 }}</td>
-                            <td>{{ s.productName }}</td>
-                            <td>{{ s.quantity }}</td>
-                            <td>{{ formatNumberWithThousandsSeparator(s.selling_price) }}</td>
-                            <td>{{ formatNumberWithThousandsSeparator(s.total_price) }}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <div class="total-section">
-                      <p>{{ $t('saleTransactionsVue.receipt.grandTotal') }}: <strong>{{ formatNumberWithThousandsSeparator(grandTotal) }} FCFA</strong></p>
-
-                      <div class="footer-section">
-                      <p>{{ $t('saleTransactionsVue.receipt.thankYouMessage') }}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </v-col>
-            </v-row>
-          </v-row>
-          <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="snackbarTimeout" location="top right">
-            {{ snackbarMessage }}
-          </v-snackbar>
-          <AppFooter />
-        </v-main>
-
-        <v-overlay :model-value="!isDataLoaded" class="align-center justify-center" persistent>
-          <v-progress-circular color="primary" size="65" indeterminate></v-progress-circular>
-          <p class="my-1 text-h6 text-white">{{ t('loading') }}</p>
-        </v-overlay>
-      </v-layout>
-    </v-card>
+    <AppFooter />
   </v-app>
 </template>
 
 <script lang="ts" setup>
 import { ref, nextTick, onMounted, computed, watch } from 'vue';
-import { useRouter } from 'vue-router';
+
 import axios from '@/axios';
 import { useLoader } from '@/useLoader';
 import SideBarComponent from '@/components/cashier/CashierSideBarComponent.vue';
@@ -235,9 +249,11 @@ import HeaderComponent from '@/components/cashier/CashierHeaderComponent.vue';
 import AppFooter from '@/components/AppFooter.vue';
 import { useI18n } from 'vue-i18n';
 
+
 // --- Composables and Utilities ---
 const { startLoading, stopLoading } = useLoader();
-const router = useRouter();
+// Removed `router` if not directly used, keeping if there's a future navigation intent
+// const router = useRouter(); 
 const { t, locale } = useI18n();
 
 // Adjust this backend URL if your Laravel API is hosted elsewhere
@@ -250,7 +266,6 @@ const getLogoUrl = (logoPath: string | undefined | null) => {
   }
   return logoPath || 'https://via.placeholder.com/60x60?text=No+Image'; // This is the fallback
 };
-
 
 const datePrint = computed(() => {
   const date = new Date();
@@ -270,9 +285,6 @@ const products = ref<any[]>([]);
 const stocks = ref<any[]>([]);
 const users = ref<any[]>([]); // This array will hold user data including names
 const selectedSales = ref<any[]>([]); // Sales selected in the table (for print/excel)
-
-// Removed userName ref as it's no longer needed for display on receipt or table
-// const userName = ref(''); // No longer used for cashier name display
 
 const storeName = ref('');
 const storeLocation = ref('');
@@ -328,15 +340,15 @@ const receiptCashierName = computed(() => {
 
 
 const headers = computed(() => [
-  { title: t('saleTransactionsVue.tableHeaders.product'), value: 'productName', align: 'center' },
-  { title: t('saleTransactionsVue.tableHeaders.costPrice'), value: 'costPrice', align: 'center' },
-  { title: t('saleTransactionsVue.tableHeaders.sellingPrice'), value: 'selling_price', align: 'center' },
-  { title: t('saleTransactionsVue.tableHeaders.quantity'), value: 'quantity', align: 'center' },
-  { title: t('saleTransactionsVue.tableHeaders.total'), value: 'total_price', align: 'center' },
-  { title: t('saleTransactionsVue.tableHeaders.customer'), value: 'customer_name', align: 'center' },
-  { title: t('saleTransactionsVue.tableHeaders.method'), value: 'payment_method', align: 'center' },
-  { title: t('saleTransactionsVue.tableHeaders.cashier'), value: 'cashierName', align: 'center' }, // This uses the derived property
-  { title: t('saleTransactionsVue.tableHeaders.date'), value: 'date', align: 'center' },
+  { title: t('saleTransactionsVue.tableHeaders.product'), value: 'productName', align: 'center' as const },
+  { title: t('saleTransactionsVue.tableHeaders.costPrice'), value: 'costPrice', align: 'center' as const },
+  { title: t('saleTransactionsVue.tableHeaders.sellingPrice'), value: 'selling_price', align: 'center' as const },
+  { title: t('saleTransactionsVue.tableHeaders.quantity'), value: 'quantity', align: 'center' as const },
+  { title: t('saleTransactionsVue.tableHeaders.total'), value: 'total_price', align: 'center' as const },
+  { title: t('saleTransactionsVue.tableHeaders.customer'), value: 'customer_name', align: 'center' as const },
+  { title: t('saleTransactionsVue.tableHeaders.method'), value: 'payment_method', align: 'center' as const },
+  { title: t('saleTransactionsVue.tableHeaders.cashier'), value: 'cashierName', align: 'center' as const }, // This uses the derived property
+  { title: t('saleTransactionsVue.tableHeaders.date'), value: 'date', align: 'center' as const },
 ]);
 
 // The main data source for the table, based on the receipt code filter
@@ -396,17 +408,6 @@ async function fetchUsers() {
     showSnackbar(t('saleTransactionsVue.snackbar.failedToLoadUsers'), 'error');
   }
 }
-
-// Removed fetchUser() as it's no longer needed for getting the *connected* user's name for receipts
-// async function fetchUser() {
-//   try {
-//     const response = await axios.get('/api/me', { headers: getAuthHeaders() });
-//     userName.value = response.data.user.name;
-//   } catch (error) {
-//     console.error('Error fetching user data:', error);
-//     showSnackbar(t('saleTransactionsVue.snackbar.failedToLoadUserInformation'), 'error');
-//   }
-// }
 
 async function fetchSales() {
   try {
@@ -627,101 +628,101 @@ function printSelectedSale() {
           <head>
             <title>sale_report_${date}</title>
              <style>
-             body { font-family: Arial, sans-serif; padding: 10px; }
-             .report-container { width: 100%; margin: 0 auto; padding: 0px; }
+              body { font-family: Arial, sans-serif; padding: 10px; }
+              .report-container { width: 100%; margin: 0 auto; padding: 0px; }
 
-             .report-header-section {
-               text-align: center;
-               margin-bottom: 10px;
-               display: flex;
-               align-items: center;
-               justify-content: center;
-               flex-wrap: wrap;
-             }
-             .report-logo {
-               max-width: 100px;
-               max-height: 80px;
-               margin-right: 15px;
-               margin-bottom: 10px;
-               display: block !important;
-               visibility: visible !important;
-               opacity: 1 !important;
-               -webkit-print-color-adjust: exact !important;
-               print-color-adjust: exact !important;
-               filter: none !important;
-             }
-             .store-info {
-               display: flex;
-               flex-direction: column;
-               align-items: flex-start;
-             }
-             .report-store-name {
-               font-size: 28px;
-               margin-bottom: 5px;
-               color: #333;
-               font-weight: bold;
-               text-align: left;
-             }
-             .report-store-contact-info {
-               font-size: 14px;
-               color: #777;
-               margin-top: 0;
-               line-height: 1.5;
-               text-align: left;
-             }
+              .report-header-section {
+                text-align: center;
+                margin-bottom: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-wrap: wrap;
+              }
+              .report-logo {
+                max-width: 100px;
+                max-height: 80px;
+                margin-right: 15px;
+                margin-bottom: 10px;
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                filter: none !important;
+              }
+              .store-info {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+              }
+              .report-store-name {
+                font-size: 28px;
+                margin-bottom: 5px;
+                color: #333;
+                font-weight: bold;
+                text-align: left;
+              }
+              .report-store-contact-info {
+                font-size: 14px;
+                color: #777;
+                margin-top: 0;
+                line-height: 1.5;
+                text-align: left;
+              }
 
-             .report-title-section { text-align: center; margin: 15px 0 10px 0; border-top: 1px solid #ddd; padding-top: 10px;}
-             .report-title { font-size: 22px; margin-bottom: 10px; color: #444; }
-             .report-date { font-size: 14px; color: #888; }
+              .report-title-section { text-align: center; margin: 15px 0 10px 0; border-top: 1px solid #ddd; padding-top: 10px;}
+              .report-title { font-size: 22px; margin-bottom: 10px; color: #444; }
+              .report-date { font-size: 14px; color: #888; }
 
-             .report-summary { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #eee; font-size: 14px; }
-             .report-summary strong { color: #000; }
+              .report-summary { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #eee; font-size: 14px; }
+              .report-summary strong { color: #000; }
 
-             .report-table-section { margin-bottom: 30px; margin-top: 30px; }
-             .report-table { width: 100%; border-collapse: collapse; }
-             .report-table th, .report-table td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 13px;}
-             .report-table th { background-color: #f5f5f5; font-weight: bold; color: #333;}
-             .report-table tbody tr:nth-child(even) { background-color: #f9f9f9; }
+              .report-table-section { margin-bottom: 30px; margin-top: 30px; }
+              .report-table { width: 100%; border-collapse: collapse; }
+              .report-table th, .report-table td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 13px;}
+              .report-table th { background-color: #f5f5f5; font-weight: bold; color: #333;}
+              .report-table tbody tr:nth-child(even) { background-color: #f9f9f9; }
 
-             .report-summary { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #eee; font-size: 14px; }
-             .report-summary strong { color: #000; }
+              .report-summary { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #eee; font-size: 14px; }
+              .report-summary strong { color: #000; }
 
-             .report-table-section { margin-bottom: 30px; margin-top: 30px; }
-             .report-table { width: 100%; border-collapse: collapse; }
-             .report-table th, .report-table td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 13px;}
-             .report-table th { background-color: #f5f5f5; font-weight: bold; color: #333;}
-             .report-table tbody tr:nth-child(even) { background-color: #f9f9f9; }
+              .report-table-section { margin-bottom: 30px; margin-top: 30px; }
+              .report-table { width: 100%; border-collapse: collapse; }
+              .report-table th, .report-table td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 13px;}
+              .report-table th { background-color: #f5f5f5; font-weight: bold; color: #333;}
+              .report-table tbody tr:nth-child(even) { background-color: #f9f9f9; }
 
-             .report-footer-section {
-               margin-top: 10px;
-               position: fixed;
-               bottom: 0;
-               left: 0;
-               width: 100%;
-               padding: 15px;
-               text-align: center;
-               z-index: 1000;
-               font-size: 8px;
-               color: #666;
-             }
-             .powered-by { font-style: italic; margin-top: 10px; }
+              .report-footer-section {
+                margin-top: 10px;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                padding: 15px;
+                text-align: center;
+                z-index: 1000;
+                font-size: 8px;
+                color: #666;
+              }
+              .powered-by { font-style: italic; margin-top: 10px; }
 
 
-             .watermark {
-                 position: absolute;
-                 top: 50%;
-                 left: 50%;
-                 transform: translate(-50%, -50%) rotate(-45deg);
-                 font-size: 80px;
-                 color: rgba(0, 0, 0, 0.1);
-                 pointer-events: none;
-                 user-select: none;
-                 white-space: nowrap;
-                 z-index: -8;
-                 -webkit-print-color-adjust: exact !important;
-                 print-color-adjust: exact !important;
-             }
-           </style>
+              .watermark {
+                  position: absolute;
+                  top: 50%;
+                  left: 50%;
+                  transform: translate(-50%, -50%) rotate(-45deg);
+                  font-size: 80px;
+                  color: rgba(0, 0, 0, 0.1);
+                  pointer-events: none;
+                  user-select: none;
+                  white-space: nowrap;
+                  z-index: -8;
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
+              }
+            </style>
           </head>
           <body>
             <div class="watermark">${ storeName.value}</div>
@@ -744,7 +745,6 @@ function printSelectedSale() {
     }
   });
 }
-
 function downloadExcel() {
   if (selectedSales.value.length === 0) {
     showSnackbar(t('saleTransactionsVue.snackbar.noSaleSelectedForExport'), 'error');
@@ -833,5 +833,95 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* You can keep your existing styles here */
+/* Scoped styles for this component */
+
+.main-content {
+  padding-top: 64px; /* Adjust based on your header's height */
+  padding-bottom: 64px; /* Adjust based on your footer's height */
+  background-color: #f5f5f5; /* Light grey background */
+}
+
+.page-wrapper {
+  max-width: 1200px; /* Limit content width */
+  margin: 0 auto; /* Center the content */
+  padding: 24px;
+}
+
+.page-title {
+  font-size: 2.5rem;
+  color: #333;
+  margin-bottom: 20px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.v-card {
+  margin-bottom: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.v-card-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #555;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 15px;
+}
+
+.v-text-field {
+  margin-bottom: 15px;
+}
+
+.v-btn {
+  font-weight: 500;
+  text-transform: capitalize;
+  letter-spacing: normal;
+  border-radius: 5px;
+}
+
+/* Data table specific styles */
+.v-data-table {
+  background-color: #fff;
+  border-radius: 8px;
+}
+
+.v-data-table th {
+  background-color: #e0e0e0;
+  font-weight: bold;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.v-data-table td {
+  font-size: 0.9rem;
+  color: #444;
+}
+
+/* Responsive adjustments */
+@media (max-width: 960px) {
+  .page-title {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .page-title {
+    font-size: 1.8rem;
+  }
+
+  .v-card-title {
+    font-size: 1.3rem;
+  }
+
+  .v-btn {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+}
+
+/* Print Styles (remain hidden on screen) */
+/* These styles are applied when the print function is triggered */
+/* Ensure these match the styles defined in the print functions for consistency */
 </style>
