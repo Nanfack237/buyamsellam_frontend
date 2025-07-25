@@ -23,8 +23,12 @@ import { en, fr } from 'vuetify/locale'; // Import Vuetify's built-in locales
 import { createI18n } from 'vue-i18n';
 
 // Import your custom language message files
-import enMessages from './locales/en.json'; // Assuming this path is correct
-import frMessages from './locales/fr.json'; // Assuming this path is correct
+// main.ts
+import enMessages from './locales/en.json'; // MUST match file system casing
+import frMessages from './locales/fr.json'; // MUST match file system casing
+
+console.log('English Messages:', enMessages); // Add this line
+console.log('French Messages:', frMessages); // Add this line
 
 // --- Vue I18n Setup ---
 const i18nMessages = {
