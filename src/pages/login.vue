@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <div class="backgruond"></div>
-    <v-img src="@/assets/logo1.svg" height="0" width="120" style="padding: 0px; margin: 0PX;" :alt="t('loginPage.logoAlt')" class="mx-4 py-0"></v-img>
+    <v-img src="@/assets/logo1.svg" height="0" width="120" style="padding: 0px; margin: 0PX;" :alt="$t('loginPage.logoAlt')" class="mx-4 py-0"></v-img>
     <v-main class="d-flex justify-center align-center">
       <v-row>
 
@@ -21,7 +21,7 @@
                 <v-icon size="40" color="green-lighten-4">mdi-account</v-icon>
               </v-avatar>
               <span class="p--text pa-4">
-                <h2 class="mt-0 pt-4">{{ t('loginPage.loginTitle') }}</h2>
+                <h2 class="mt-0 pt-4">{{ $t('loginPage.loginTitle') }}</h2>
               </span>
             </div>
             <v-form ref="formRef" @submit.prevent="SubmitLogin">
@@ -31,7 +31,7 @@
                   :rules="emailRules"
                   type="email"
                   :label="t('loginPage.emailLabel')"
-                  :placeholder="t('loginPage.emailPlaceholder')"
+                  :placeholder="$t('loginPage.emailPlaceholder')"
                   prepend-inner-icon="mdi-account"
                   required
                 />
@@ -39,8 +39,8 @@
                   v-model="password"
                   :rules="passwordRules"
                   :type="passwordShow ? 'text' : 'password'"
-                  :label="t('loginPage.passwordLabel')"
-                  :placeholder="t('loginPage.passwordPlaceholder')"
+                  :label="$t('loginPage.passwordLabel')"
+                  :placeholder="$t('loginPage.passwordPlaceholder')"
                   prepend-inner-icon="mdi-key"
                   :append-icon="passwordShow ? 'mdi-eye' : 'mdi-eye-off'"
                   @click:append="passwordShow = !passwordShow"
@@ -49,7 +49,7 @@
                 <!-- <v-switch :label="t('loginPage.rememberMe')" color="blue-darken-4" hide-details></v-switch> -->
                 <v-card-actions class="justify-center ">
                   <v-btn :loading="loading" type="submit" class="my-3" variant="flat" color="blue-darken-4">
-                    <span class="px-8">{{ t('loginPage.loginButton') }}<v-icon>mdi-login</v-icon></span>
+                    <span class="px-8">{{ $t('loginPage.loginButton') }}<v-icon>mdi-login</v-icon></span>
                   </v-btn>
                 </v-card-actions>
               </v-card-text>
@@ -65,7 +65,7 @@
 
     <v-overlay :model-value="isGlobalLoading" class="align-center justify-center" persistent>
       <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
-      <p class="my-1 text-h6 text-white">{{ t('loginPage.loading') }}</p>
+      <p class="my-1 text-h6 text-white">{{ $t('loginPage.loading') }}</p>
     </v-overlay>
   </v-app>
 </template>
