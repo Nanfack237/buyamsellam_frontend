@@ -3,7 +3,7 @@
     v-model="drawer"
     :rail="rail"
     permanent
-    @click.stop="toggleRail"
+    @click="() => { if (rail) rail = false }"
     color="blue-darken-4"
     style="max-width: 100%;"
   >
@@ -16,12 +16,13 @@
       nav
     >
       <template v-slot:append>
+        <!-- This button correctly toggles the rail mode (collapse/expand) -->
         <v-btn icon="mdi-chevron-left mdi-icon" variant="text" @click.stop="toggleRail" />
       </template>
       <template v-slot:subtitle>
         <p v-if="hasStoreId" class="text-medium-emphasis text-truncate" >
           <v-icon size="40" color='success' class="p">mdi-circle-small</v-icon>
-          <span  style="color: #90CAF9;">{{ storeName }}</span>
+          <span style="color: #90CAF9;">{{ storeName }}</span>
         </p>
       </template>
     </v-list-item>
@@ -29,49 +30,78 @@
     <v-divider></v-divider>
 
     <v-list nav>
+      <!-- Stock Controller Specific Navigation -->
       <v-list-item link to="/stockcontroller/stock" prepend-icon="mdi-shopping mdi-icon" :title="$t('stock')"></v-list-item>
-      <v-list-item link to="/stockcontroller/purchase" prepend-icon="mdi-cart-check mdi-icon" :title="$t('purchaseTransactions')"></v-list-item>    
-      <v-list-item link to="/stockcontroller/supplier" prepend-icon="mdi-truck mdi-icon mdi-icon" :title="$t('supplier')"></v-list-item>
+      <v-list-item link to="/stockcontroller/purchase" prepend-icon="mdi-cart-check mdi-icon" :title="$t('purchaseTransactions')"></v-list-item>     
+      <v-list-item link to="/stockcontroller/supplier" prepend-icon="mdi-truck mdi-icon" :title="$t('supplier')"></v-list-item>
     </v-list>
   </v-navigation-drawer>
 </template>
+
 <script setup>
-import { ref, onMounted, computed } from 'vue'; // Add 'computed'
+import { ref, onMounted, computed } from 'vue';
 import axios from '@/axios';
 import { useLoader } from '@/useLoader';
-import { useRouter } from 'vue-router'; // Correct import for useRouter
-import { useI18n } from 'vue-i18n'; // Import useI18n for translations
+import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 
-const { startLoading, stopLoading} = useLoader();
-const { t } = useI18n(); // Destructure t for use in script if needed, or rely on $t in template
+// --- Composables and Utilities ---
+const { startLoading, stopLoading } = useLoader();
+const router = useRouter();
+const { t } = useI18n(); // Initialize t for translations
 
+// --- Reactive State ---
 const drawer = ref(true);
 const rail = ref(false);
 const userEmail = ref('');
-const userName = ref(''); // Added for user's name
-const userProfileImagePath = ref(null); // New reactive ref for the image path
+const userName = ref('');
+const userProfileImagePath = ref(null);
 const storeName = ref('');
 const hasStoreId = ref(false);
+const userRole = ref(''); // Reactive ref for user role
 
-// Backend base URL (adjust if different from your store image backendUrl)
-const backendUrl = 'http://localhost:8000'; // **MAKE SURE THIS MATCHES YOUR LARAVEL APP_URL OR ASSET_URL**
+const backendUrl = 'http://localhost:8000'; // MAKE SURE THIS MATCHES YOUR LARAVEL APP_URL OR ASSET_URL
 
-// Computed property to construct the full image URL
+// --- Computed Properties ---
 const userProfileImage = computed(() => {
   if (userProfileImagePath.value) {
-    // Check if the path is already a full URL (e.g., from an external source or already processed)
     if (userProfileImagePath.value.startsWith('http://') || userProfileImagePath.value.startsWith('https://') || userProfileImagePath.value.startsWith('//')) {
       return userProfileImagePath.value;
     }
-    // Assume it's a relative path to your Laravel storage
     return `${backendUrl}/storage/${userProfileImagePath.value}`;
   }
-  return null; // Return null if no path is set
+  return null;
 });
 
-// Fallback avatar if no user image is available
-const defaultAvatar = 'https://via.placeholder.com/150/0D47A1/FFFFFF?text=USER'; // A generic placeholder avatar
+const defaultAvatar = 'https://via.placeholder.com/150/0D47A1/FFFFFF?text=USER';
 
+// Computed property to check if the user is a staff member (though not used in this specific template, good to keep)
+const isStaff = computed(() => userRole.value === 'staff' || userRole.value === 'Personnel');
+
+const shortageProducts = ref([]); // Initialize as an empty array
+
+// --- Methods ---
+const toggleRail = () => {
+  rail.value = !rail.value;
+};
+
+const fetchShortages = async () => {
+  try {
+    const token = sessionStorage.getItem('access_token');
+    if (!token) {
+      console.warn('No access token found for fetching shortages.');
+      return;
+    }
+    const res = await axios.get('/api/stocks/shortage', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    shortageProducts.value = res.data.shortage;
+  } catch (e) {
+    console.error('Failed to fetch shortages:', e);
+  }
+};
+
+// --- Lifecycle Hooks ---
 onMounted(async () => {
   startLoading();
 
@@ -85,19 +115,18 @@ onMounted(async () => {
 
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-    // Fetch User Data including profile image path
+    // Fetch User Data including profile image path and role
     const userResponse = await axios.get('/api/me');
     if (userResponse.data && userResponse.data.user) {
       userEmail.value = userResponse.data.user.email || '';
       userName.value = userResponse.data.user.name || '';
-      // Assign the profile image path
-      userProfileImagePath.value = userResponse.data.user.image || null; // Assuming 'profile_image' field
-      console.log('User data fetched. Profile image path:', userProfileImagePath.value);
+      userProfileImagePath.value = userResponse.data.user.image || null;
+      userRole.value = userResponse.data.user.role || ''; // Assigned user role
+      console.log('User data fetched. User role:', userRole.value);
     } else {
       console.warn('User data not found in /api/me response.');
     }
 
-    // Get storeId from sessionStorage
     const storeId = sessionStorage.getItem('storeId');
 
     if (storeId) {
@@ -111,7 +140,6 @@ onMounted(async () => {
           console.log(`Store name fetched: ${storeName.value}`);
         } else {
           console.warn('Store name not found in /api/stores/showstore response:', storeResponse.data);
-          
         }
       } catch (storeError) {
         console.error('Error fetching store details:', storeError);
@@ -125,20 +153,17 @@ onMounted(async () => {
 
   } catch (error) {
     console.error('General error in SideBarComponent onMounted:', error);
-    if (error.response && error.response.status === 401) {
+    if (axios.isAxiosError(error) && error.response && error.response.status === 401) {
       console.warn('Authentication failed during /api/me. Redirecting to login.');
       router.push('/login');
     }
   } finally {
     stopLoading();
   }
+
+  // Call fetchShortages onMounted as well (ensure it runs after auth token is set)
+  fetchShortages();
 });
-
-
-const toggleRail = () => {
-  rail.value = !rail.value;
-};
-
 </script>
 
 <style scoped>
@@ -146,13 +171,9 @@ const toggleRail = () => {
   color: white;
 }
 
-/* Add any specific styling for truncated text if not handled by Vuetify classes */
 .truncate-text {
-  /* overflow: hidden; */
-  /* text-overflow: ellipsis; */
-  /* white-space: nowrap; */
-  max-width: 150px; /* Adjust as needed */
+  max-width: 150px;
   display: inline-block;
-  vertical-align: middle; /* Align with icon */
+  vertical-align: middle;
 }
 </style>

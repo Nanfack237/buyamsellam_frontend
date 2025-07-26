@@ -100,7 +100,7 @@ import "flag-icons/css/flag-icons.min.css";
 const props = defineProps({
   products: {
     type: Array,
-    required: true
+    required: false
   },
   storeIdProp: {
     type: [String, null],

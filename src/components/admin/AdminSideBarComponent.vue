@@ -1,3 +1,124 @@
+<template>
+  <v-navigation-drawer
+    v-model="drawer"
+    :rail="rail"
+    permanent
+    @click="() => { if (rail) rail = false }" 
+    color="blue-darken-4"
+    style="max-width: 100%;"
+  >
+    <v-list-item
+      class="py-3"
+      style="padding-bottom: 0px;"
+      :prepend-avatar="userProfileImage || defaultAvatar" 
+      :title="userEmail || userName"
+      height="60"
+      nav
+    >
+      <template v-slot:append>
+        <!-- This button correctly toggles the rail mode (collapse/expand) -->
+        <v-btn icon="mdi-chevron-left mdi-icon" variant="text" @click.stop="toggleRail" />
+      </template>
+      <template v-slot:subtitle>
+        <p v-if="hasStoreId" class="text-medium-emphasis text-truncate" >
+          <v-icon size="40" color='success' class="p">mdi-circle-small</v-icon>
+          <span class="truncate-text" style="color: #90CAF9; font-size: 100%">{{ storeName }}</span>
+        </p>
+      </template>
+    </v-list-item>
+
+    <v-divider></v-divider>
+
+    <v-list nav>
+      <!-- Admin/Manager Specific Navigation -->
+      <v-list-item link to="/admin/dashboard" prepend-icon="mdi-view-dashboard mdi-icon" :title="$t('dashboard')" value="home"></v-list-item>
+
+      <v-list-group prepend-icon="mdi-account mdi-icon">
+        <template v-slot:activator="{ props }">
+          <v-list-item v-bind="props" :title="$t('user')" value="user"></v-list-item>
+        </template>
+        <v-list-item link to="/admin/users" prepend-icon="mdi-account-group mdi-icon" :title="$t('userVue.user_list')"></v-list-item>
+        <v-list-item link to="/admin/register-user" prepend-icon="mdi-plus-circle mdi-icon" :title=" $t('addUserVue.add_a_user')"></v-list-item>
+      </v-list-group>
+
+      <v-list-group prepend-icon="mdi-store mdi-icon">
+        <template v-slot:activator="{ props }">
+          <v-list-item v-bind="props" :title="$t('store')" value="store"></v-list-item>
+        </template>
+        <v-list-item link to="/admin/stores" prepend-icon="mdi-store mdi-icon" :title="t('list_of_stores')"></v-list-item>
+
+        <template v-if="hasStoreId">
+          <v-list-item link to="/admin/create-store" prepend-icon="mdi-plus-circle mdi-icon" :title="$t('createAStore')"></v-list-item>
+        </template>
+      </v-list-group>
+
+      <template v-if="hasStoreId">
+        <v-list-item link to="/stock" prepend-icon="mdi-archive" :title="$t('stock')" value="stock">
+          <template v-slot:append>
+            <v-badge
+              v-if="shortageProducts.length > 0"
+              color="red"
+              :content="shortageProducts.length"
+              inline
+            />
+          </template>
+        </v-list-item>
+      </template>
+
+      <v-list-group prepend-icon="mdi-shopping">
+        <template v-slot:activator="{ props }">
+          <v-list-item v-bind="props" :title="$t('product')" value="product"></v-list-item>
+        </template>
+        <v-list-item link to="/product" prepend-icon="mdi-view-list mdi-icon" :title="$t('listOfProducts')"></v-list-item>
+        <template v-if="hasStoreId">
+          <v-list-item link to="/add-product" prepend-icon="mdi-plus-circle mdi-icon" :title="$t('addProduct')"></v-list-item>
+        </template>
+      </v-list-group>
+
+      <v-list-group prepend-icon="mdi-cart-check">
+        <template v-slot:activator="{ props }">
+          <v-list-item v-bind="props" :title="$t('purchase')" value="purchase"></v-list-item>
+        </template>
+        <v-list-item link to="/purchase" prepend-icon="mdi-view-list mdi-icon" :title="$t('purchaseTransactions')"></v-list-item>
+        <template v-if="hasStoreId">
+          <v-list-item link to="/add-purchase" prepend-icon="mdi-plus-circle mdi-icon" :title="$t('doAPurchase')"></v-list-item>
+        </template>
+      </v-list-group>
+
+      <v-list-group prepend-icon="mdi-cart" value="sale">
+        <template v-slot:activator="{ props }">
+          <v-list-item v-bind="props" :title="$t('sale')"></v-list-item>
+        </template>
+        <v-list-item link to="/sale" prepend-icon="mdi-view-list mdi-icon" :title="$t('saleTransactions')"></v-list-item>
+
+        <template v-if="hasStoreId">
+          <v-list-item link to="/add-sale" prepend-icon="mdi-plus-circle mdi-icon" :title="$t('doASale')"></v-list-item>
+        </template>
+
+        <template v-if="hasStoreId">
+          <v-list-item link to="/check-receipt" prepend-icon="mdi-receipt-text-outline mdi-icon" :title="$t('checkReceipt')"></v-list-item>
+        </template>
+      </v-list-group>
+
+      <v-list-group prepend-icon="mdi-account-tie mdi-icon">
+        <template v-slot:activator="{ props }">
+          <v-list-item v-bind="props" :title="$t('employee')" value="employee"></v-list-item>
+        </template>
+        <v-list-item link to="/employee" prepend-icon="mdi-view-list mdi-icon" :title="$t('listOfEmployees')"></v-list-item>
+        <template v-if="hasStoreId">
+          <v-list-item link to="/add-employee" prepend-icon="mdi-plus-circle mdi-icon" :title="$t('addEmployee')"></v-list-item>
+        </template>
+      </v-list-group>
+
+      <v-list-item link to="/supplier" prepend-icon="mdi-truck mdi-icon" :title="$t('supplier')"></v-list-item>
+      <v-list-item link to="/customer" prepend-icon="mdi-account-box" :title="$t('customer')"></v-list-item>
+      <v-list-item link to="/statistics" prepend-icon="mdi-chart-box mdi-icon" :title="$t('statistics')"></v-list-item>
+      
+      <v-list-item link to="/settings" prepend-icon="mdi-cog mdi-icon" :title="$t('sidebarStoreSettings')"></v-list-item>
+    </v-list>
+  </v-navigation-drawer>
+</template>
+
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import axios from '@/axios';
@@ -5,9 +126,12 @@ import { useLoader } from '@/useLoader';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
+// --- Composables and Utilities ---
 const { startLoading, stopLoading } = useLoader();
-const { t } = useI18n();
+const router = useRouter();
+const { t } = useI18n(); // Initialize t for translations
 
+// --- Reactive State ---
 const drawer = ref(true);
 const rail = ref(false);
 const userEmail = ref('');
@@ -19,6 +143,7 @@ const userRole = ref(''); // New reactive ref for user role
 
 const backendUrl = 'http://localhost:8000'; // MAKE SURE THIS MATCHES YOUR LARAVEL APP_URL OR ASSET_URL
 
+// --- Computed Properties ---
 const userProfileImage = computed(() => {
   if (userProfileImagePath.value) {
     if (userProfileImagePath.value.startsWith('http://') || userProfileImagePath.value.startsWith('https://') || userProfileImagePath.value.startsWith('//')) {
@@ -34,6 +159,29 @@ const defaultAvatar = 'https://via.placeholder.com/150/0D47A1/FFFFFF?text=USER';
 // Computed property to check if the user is a staff member
 const isStaff = computed(() => userRole.value === 'staff' || userRole.value === 'Personnel');
 
+const shortageProducts = ref([])
+const fetchShortages = async () => {
+  try {
+    const token = sessionStorage.getItem('access_token'); // Ensure token is present for this call too
+    if (!token) {
+      console.warn('No access token found for fetching shortages.');
+      return;
+    }
+    const res = await axios.get('/api/stocks/shortage', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    shortageProducts.value = res.data.shortage;
+  } catch (e) {
+    console.error('Failed to fetch shortages:', e);
+  }
+}
+
+// --- Methods ---
+const toggleRail = () => {
+  rail.value = !rail.value;
+};
+
+// --- Lifecycle Hooks ---
 onMounted(async () => {
   startLoading();
 
@@ -92,15 +240,10 @@ onMounted(async () => {
   } finally {
     stopLoading();
   }
+
+  // Call fetchShortages onMounted as well (ensure it runs after auth token is set)
+  fetchShortages();
 });
-
-
-const toggleRail = () => {
-  rail.value = !rail.value;
-};
-
-const shortageProducts = ref([])
-
 </script>
 
 <style scoped>
@@ -114,137 +257,3 @@ const shortageProducts = ref([])
   vertical-align: middle;
 }
 </style>
-
-<template>
-  <v-navigation-drawer
-    v-model="drawer"
-    :rail="rail"
-    permanent
-    @click.stop="toggleRail"
-    color="blue-darken-4"
-    style="max-width: 100%;"
-  >
-    <v-list-item
-      class="py-3"
-      style="padding-bottom: 0px;"
-      :prepend-avatar="userProfileImage || defaultAvatar"
-      :title="userEmail || userName"
-      height="60"
-      nav
-    >
-      <template v-slot:append>
-        <v-btn icon="mdi-chevron-left mdi-icon" variant="text" @click.stop="toggleRail" />
-      </template>
-      <template v-slot:subtitle>
-        <p v-if="hasStoreId" class="text-medium-emphasis text-truncate">
-          <v-icon size="40" color='success' class="p">mdi-circle-small</v-icon>
-          <span class="truncate-text" style="color: #90CAF9; font-size: 100%">{{ storeName }}</span>
-        </p>
-      </template>
-    </v-list-item>
-
-    <v-divider></v-divider>
-
-    <v-list nav>
-     
-        <v-list-item link to="/admin/dashboard" prepend-icon="mdi-view-dashboard mdi-icon" :title="$t('dashboard')" value="home"></v-list-item>
-
-        <v-list-group prepend-icon="mdi-account mdi-icon">
-            <template v-slot:activator="{ props }">
-              <v-list-item v-bind="props" :title="$t('user')" value="user"></v-list-item>
-            </template>
-            <v-list-item link to="/admin/users" prepend-icon="mdi-account-group mdi-icon" :title="$t('userVue.user_list')"></v-list-item>
-              
-            <v-list-item link to="/admin/register-user" prepend-icon="mdi-plus-circle mdi-icon" :title=" $t('addUserVue.add_a_user')"></v-list-item>
-              
-        </v-list-group>
-
-        <v-list-group prepend-icon="mdi-store mdi-icon">
-          <template v-slot:activator="{ props }">
-            <v-list-item v-bind="props" :title="$t('store')" value="store"></v-list-item>
-          </template>
-          <v-list-item link to="/admin/stores" prepend-icon="mdi-store mdi-icon" :title="t('list_of_stores')"></v-list-item>
-
-          <template v-if="hasStoreId">
-            
-            <v-list-item link to="/admin/create-store" prepend-icon="mdi-plus-circle mdi-icon" :title="$t('createAStore')"></v-list-item>
-          </template>
-        </v-list-group>
-
-        <template v-if="hasStoreId">
-
-          <v-list-item link to="/stock" prepend-icon="mdi-archive" :title="$t('stock')" value="stock">
-            <template v-slot:append>
-              <v-badge
-                v-if="shortageProducts.length > 0"
-                color="red"
-                :content="shortageProducts.length"
-                inline
-              />
-            </template>
-          </v-list-item>
-        </template>
-
-        <v-list-group prepend-icon="mdi-shopping">
-          <template v-slot:activator="{ props }">
-            <v-list-item v-bind="props" :title="$t('product')" value="product"></v-list-item>
-          </template>
-          <v-list-item link to="/product" prepend-icon="mdi-view-list mdi-icon" :title="$t('listOfProducts')"></v-list-item>
-          <template v-if="hasStoreId">
-            <v-list-item link to="/add-product" prepend-icon="mdi-plus-circle mdi-icon" :title="$t('addProduct')"></v-list-item>
-          </template>
-        </v-list-group>
-
-        <v-list-group prepend-icon="mdi-cart-check">
-          <template v-slot:activator="{ props }">
-            <v-list-item v-bind="props" :title="$t('purchase')" value="purchase"></v-list-item>
-          </template>
-          <v-list-item link to="/purchase" prepend-icon="mdi-view-list mdi-icon" :title="$t('purchaseTransactions')"></v-list-item>
-          <template v-if="hasStoreId">
-            <v-list-item link to="/add-purchase" prepend-icon="mdi-plus-circle mdi-icon" :title="$t('doAPurchase')"></v-list-item>
-          </template>
-        </v-list-group>
-
-        <v-list-group prepend-icon="mdi-cart" value="sale">
-          <template v-slot:activator="{ props }">
-            <v-list-item v-bind="props" :title="$t('sale')"></v-list-item>
-          </template>
-          <v-list-item link to="/sale" prepend-icon="mdi-view-list mdi-icon" :title="$t('saleTransactions')"></v-list-item>
-
-          <template v-if="hasStoreId">
-            <v-list-item link to="/add-sale" prepend-icon="mdi-plus-circle mdi-icon" :title="$t('doASale')"></v-list-item>
-          </template>
-
-          <template v-if="hasStoreId">
-
-            <v-list-item link to="/check-receipt" prepend-icon="mdi-receipt-text-outline mdi-icon" :title="$t('checkReceipt')"></v-list-item>
-
-          </template>
-        </v-list-group>
-
-       
-          <v-list-group prepend-icon="mdi-account-tie mdi-icon">
-            <template v-slot:activator="{ props }">
-              <v-list-item v-bind="props" :title="$t('employee')" value="employee"></v-list-item>
-            </template>
-            <v-list-item link to="/employee" prepend-icon="mdi-view-list mdi-icon" :title="$t('listOfEmployees')"></v-list-item>
-              <template v-if="hasStoreId">
-                <v-list-item link to="/add-employee" prepend-icon="mdi-plus-circle mdi-icon" :title="$t('addEmployee')"></v-list-item>
-              </template>
-          </v-list-group>
-       
-
-        <v-list-item link to="/supplier" prepend-icon="mdi-truck mdi-icon" :title="$t('supplier')"></v-list-item>
-        
-        <v-list-item link to="/customer" prepend-icon="mdi-account-box" :title="$t('customer')"></v-list-item>
-        <v-list-item link to="/statistics" prepend-icon="mdi-chart-box mdi-icon" :title="$t('statistics')"></v-list-item>
-       
-       
-        <v-list-item link to="/settings" prepend-icon="mdi-cog mdi-icon" :title="$t('sidebarStoreSettings')"></v-list-item>
-      
-
-    
-      
-    </v-list>
-  </v-navigation-drawer>
-</template>

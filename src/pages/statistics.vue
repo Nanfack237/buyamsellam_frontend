@@ -461,13 +461,13 @@ const displayPeriod = computed(() => {
 
 
 const topProductHeaders = computed<DataTableHeader<any>[]>(() => [
-  { title: t('statisticsVue.product_name'), value: 'name', align: 'start' as const },
-  { title: t('statisticsVue.quantity'), value: 'total_sold', align: 'end' as const },
+  { title: t('statisticsVue.product_name'), value: 'name', align: 'center' as const },
+  { title: t('statisticsVue.quantity'), value: 'total_sold', align: 'center' as const },
 ]);
 
 const topCustomerHeaders = computed<DataTableHeader<any>[]>(() => [
-  { title: t('statisticsVue.customer_name'), value: 'name', align: 'start' as const },
-  { title: t('statisticsVue.quantity'), value: 'total_bought', align: 'end' as const },
+  { title: t('statisticsVue.customer_name'), value: 'name', align: 'center' as const },
+  { title: t('statisticsVue.quantity'), value: 'total_bought', align: 'center' as const },
 ]);
 
 // --- Methods ---
