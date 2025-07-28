@@ -87,11 +87,6 @@
                     {{ formatNumberWithThousandsSeparator(item.unit_price) }}
                 </template>
                 
-                <template v-slot:item.actions="{ item }">
-                  <v-icon size="small" @click="viewPurchase(item)">
-                    mdi-eye
-                  </v-icon>
-                </template>
               </v-data-table>
             </v-card>
             <v-row justify="end" class="my-1">
@@ -276,7 +271,6 @@ const headers = computed<DataTableHeader<Purchase>[]>(() => [
   { title: t('purchaseTransactionsVue.quantityHeader'), value: 'quantity', align: 'center' },
   { title: t('purchaseTransactionsVue.supplierHeader'), value: 'supplierName', align: 'center' },
   { title: t('purchaseTransactionsVue.dateHeader'), value: 'date', align: 'center' },
-  { title: t('common.actions'), value: 'actions', sortable: false, align: 'center' }, // Added actions header
 ]);
 
 const filteredPurchase = computed(() => {

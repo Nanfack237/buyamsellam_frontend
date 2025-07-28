@@ -514,7 +514,7 @@ function printContent(contentRef: HTMLElement | null, title: string, isReceipt: 
   }
 }
 
-function printReceipt(): void {
+function printReceipt() {
   if (selectedSales.value.length === 0) {
     showSnackbar(t('saleTransactionsVue.snackbar.printSelectOneItemReceipt'), 'error');
     return;
@@ -527,7 +527,91 @@ function printReceipt(): void {
   }
 
   nextTick(() => {
-    printContent(printSectionReceipt.value, `customer_receipt_${new Date().toLocaleDateString().replace(/\//g, '-')}`, true);
+    if (!printSectionReceipt.value) {
+      console.warn('printSectionReceipt is not ready for printing.');
+      showSnackbar(t('saleTransactionsVue.snackbar.printFunctionUnavailable'), 'error');
+      return;
+    }
+
+    const printContent = printSectionReceipt.value.innerHTML;
+    const printWindow = window.open('', '_blank', 'width=900,height=700');
+
+    const date = new Date().toLocaleDateString();
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>customer_receipt_${date.replace(/\//g, '-')}</title>
+            <style>
+              body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; color: #333; font-size: 14px;}
+              .receipt-container { width: 300px; margin: 0 auto; padding: 15px; border: 1px dashed #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
+              .header-section { text-align: center; margin-bottom: 15px; }
+              .receipt-logo {
+                max-width: 80px;
+                max-height: 50px;
+                margin-bottom: 10px;
+                display: block !important;
+                margin-left: auto;
+                margin-right: auto;
+                visibility: visible !important;
+                opacity: 1 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                filter: none !important;
+              }
+              .store-name { font-size: 24px; margin-bottom: 5px; color: black; font-weight: bold; }
+              .store-contact-info { font-size: 12px; color: #777; margin-top: 0; line-height: 1.2; }
+              
+              .receipt-title-section { text-align: center; margin: 20px 0 15px 0; border-top: 1px dashed #eee; padding-top: 15px;}
+              .receipt-title { font-size: 20px; margin-bottom: 5px; color: #555; }
+              .receipt-id { font-size: 12px; color: #888; }
+
+              .info-section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #eee; }
+              .info-section p { margin: 5px 0; font-size: 13px; }
+              .info-section strong { color: #000; }
+
+              .items-table-section { margin-bottom: 20px; }
+              .receipt-table { width: 100%; border-collapse: collapse; }
+              .receipt-table th, .receipt-table td { border: 0; padding: 8px 0; text-align: left; font-size: 13px;}
+              .receipt-table th { border-bottom: 1px solid #ddd; padding-bottom: 10px; font-weight: bold; color: #444;}
+              .receipt-table tbody tr:last-child td { border-bottom: none; }
+
+              .total-section { text-align: right; font-size: 18px; font-weight: bold; margin-top: 20px; padding-top: 15px; border-top: 2px solid #555; }
+              .total-section p { margin: 0; }
+
+              .footer-section { text-align: center; margin-top: 30px; font-size: 12px; color: #666; line-height: 1.5; }
+              .powered-by { font-style: italic; margin-top: 10px; }
+              
+              @media print {
+                body {
+                  -webkit-print-color-adjust: exact;
+                  print-color-adjust: exact;
+                }
+                .receipt-container {
+                  border: none;
+                  box-shadow: none;
+                }
+              }
+            </style>
+          </head>
+          <body>
+            ${printContent}
+            <script>
+              window.onload = function() {
+                window.print();
+                window.onafterprint = function() {
+                  window.close();
+                };
+              };
+            <\/script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+    } else {
+      showSnackbar(t('saleTransactionsVue.snackbar.popupsBlocked'), 'error');
+    }
   });
 }
 

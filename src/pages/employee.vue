@@ -39,7 +39,7 @@
             <v-card elevation="4" width="3000" class="my-2 py-2 px-5">
               <p class="text-high-emphasis py-2">
                 <b>{{ selectedEmployee.length || filteredEmployee.length }}</b>
-                {{ (selectedEmployee?.length ?? 0) === 1 ? 'employee' : 'employees' }}
+                {{ (selectedEmployee?.length ?? 0) === 1 ? 'Employee' : 'Employees' }}
               </p>
               <v-divider class="border-opacity-100" color="grey-lighten-1"></v-divider>
 
@@ -69,10 +69,13 @@
                   {{ item.created_at ? item.created_at.slice(0, 10) : 'N/A' }}
                 </template>
                 <template #item.status="{ item }">
-                  <v-icon :color="item.status === 1 ? 'green' : 'grey'" size="16" class="me-2">
-                    mdi-check-circle
-                  </v-icon>
-                  <span>{{ item.status === 1 ? $t('active') : $t('inactive') }}</span>
+                  
+                  <v-chip v-if="item.status === 0" color="red" class="ma-2" label>
+                   {{ $t('inactive') }} 
+                  </v-chip>
+                  <v-chip v-else color="success" class="ma-2" label>
+                   {{ $t('active') }} 
+                  </v-chip>
                 </template>
 
                 <template v-slot:item.actions="{ item }">

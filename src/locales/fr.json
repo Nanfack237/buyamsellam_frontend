@@ -216,7 +216,8 @@
     "networkError": "Erreur réseau : Aucune réponse du serveur. Vérifiez votre connexion internet.",
     "clientError": "Une erreur inattendue côté client est survenue.",
     "noStoreIdFound": "Aucun ID de Boutique trouvé pour votre compte. Veuillez contacter le support.",
-    "fetchDataError": "Erreur lors de la récupération des données utilisateur."
+    "fetchDataError": "Erreur lors de la récupération des données utilisateur.",
+    "storeAccess": "Accès interdit. La Boutique est inactif pour le moment"
   },
 
    "storesPage": {
@@ -333,7 +334,7 @@
     "no_stores_to_print": "Aucun Boutique disponible à imprimer.",
     "snackbar_print_section_not_ready": "Section d'impression non prête. Veuillez réessayer.",
     "snackbar_print_window_failed": "Échec de l'ouverture de la fenêtre d'impression.",
-    "report_title_store_list": "Rapport de la liste des Boutiques",
+    "report_title_store_list": "Liste des Boutiques",
     "print_title_prefix_store": "list_des_boutiques",
     "report_date_label": "Date",
     "report_user_label": "Utilisateur",

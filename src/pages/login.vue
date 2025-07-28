@@ -1,29 +1,19 @@
 <template>
   <v-app>
-    <div class="backgruond"></div>
-   
+    <div class="backgruond">
+
+      <v-img src="@/assets/logo1.svg" height="0" width="120" style="padding: 0px; margin: 0PX;" :alt="t('loginPage.logoAlt')" class="mx-4 py-0"></v-img>
+    </div>
+
     <v-main class="d-flex justify-center align-center">
       <v-row>
-
-        <!-- <v-col cols="12" class="py-2" md="7">
-          <v-card class="px-5 mt-0" variant="text" height="370">
-            <h1 class="text-h2" style="color: white;">
-               {{ text }} |
-              <v-icon color="green-lighten-3">mdi-emoticon-outline</v-icon>
-            </h1>
-          </v-card>
-        </v-col> -->
-
-       <v-col cols="10" lg="4" class="mx-auto">
-        
+        <v-col cols="10" lg="4" class="mx-auto">
           <v-card class="mx-6 pa-4" elevation="5">
             <div class="text-center">
-              
               <v-avatar size="80" color="blue-darken-4">
-                <v-icon size="40" >mdi-account</v-icon>
+                <v-icon size="40">mdi-account</v-icon>
               </v-avatar>
               <span class="p--text pa-4">
-
                 <h2 class="mt-0 pt-4">{{ t('loginPage.loginTitle') }}</h2>
               </span>
             </div>
@@ -49,7 +39,6 @@
                   @click:append="passwordShow = !passwordShow"
                   required
                 />
-                <!-- <v-switch :label="t('loginPage.rememberMe')" color="blue-darken-4" hide-details></v-switch> -->
                 <v-card-actions class="justify-center ">
                   <v-btn :loading="loading" type="submit" class="my-3" variant="flat" color="blue-darken-4">
                     <span class="px-8">{{ t('loginPage.loginButton') }}<v-icon>mdi-login</v-icon></span>
@@ -72,18 +61,19 @@
     </v-overlay>
   </v-app>
 </template>
-
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from '@/axios';
 import { useLoader } from '@/useLoader';
-import { useI18n } from 'vue-i18n'; // Import useI18n
+import { useI18n } from 'vue-i18n';
+
+// ... (other imports and reactive states remain the same)
 
 // --- Composables and Utilities ---
 const router = useRouter();
 const { startLoading, stopLoading, isLoading: isGlobalLoading } = useLoader();
-const { t } = useI18n(); // Initialize useI18n
+const { t } = useI18n();
 
 // --- Reactive State ---
 const snackbar = ref(false);
@@ -96,10 +86,10 @@ const passwordShow = ref<boolean>(false);
 const email = ref<string>('');
 const password = ref<string>('');
 
-// For the typewriter effect
+const storeStatus = ref<number | null>(null); // storeStatus will hold the status fetched
+
 const text = ref<string>('');
 const index = ref<number>(0);
-// Use a computed property for the message to translate it
 const typewriterMessage = ref<string>(t('loginPage.welcomeMessage'));
 
 // --- Form Validation Rules ---
@@ -117,12 +107,12 @@ const formRef = ref<InstanceType<typeof import('vuetify/components')['VForm']> |
 
 // --- Methods ---
 function typewriter() {
-  const messageToType = typewriterMessage.value; // Use the translated message
+  const messageToType = typewriterMessage.value;
   const interval = setInterval(() => {
     text.value = messageToType.slice(0, ++index.value);
     if (index.value === messageToType.length) {
       clearInterval(interval);
-      setTimeout(erase, 1500); // Wait a bit before erasing
+      setTimeout(erase, 1500);
     }
   }, 100);
 }
@@ -132,9 +122,8 @@ function erase() {
     text.value = text.value.slice(0, --index.value);
     if (index.value === 0) {
       clearInterval(interval);
-      // Re-fetch the translated message in case locale changed
       typewriterMessage.value = t('loginPage.welcomeMessage');
-      setTimeout(typewriter, 1000); // Wait a bit before re-typing
+      setTimeout(typewriter, 1000);
     }
   }, 50);
 }
@@ -144,10 +133,115 @@ function showSnackbar(message: string, color: string) {
   snackbarColor.value = color;
   snackbar.value = true;
 }
+
+/**
+ * Handles clearing session data.
+ */
+function clearSessionData() {
+  sessionStorage.removeItem('access_token');
+  sessionStorage.removeItem('userRole');
+  sessionStorage.removeItem('userId');
+  sessionStorage.removeItem('userEmail');
+  sessionStorage.removeItem('storeId');
+  delete axios.defaults.headers.common['Authorization'];
+  console.log('Session data cleared due to access restriction.');
+}
+
+/**
+ * Checks store status for specific roles and redirects, or denies access.
+ * Returns true if the user's access is validated and they should proceed (or are redirected),
+ * returns false if access is denied and they should remain on the login page.
+ */
+const checkStoreAccessAndRedirect = async (
+  userRole: string,
+  userId: string,
+  token: string,
+  storeId: string | null, // storeId can be null if not fetched
+  isInitialLogin: boolean // To differentiate initial login vs. onMounted check
+): Promise<boolean> => {
+  const restrictedRoles = ['Cashier', 'Caissier', 'Stock Controller', 'Contrôleur de stock', 'staff', 'Personnel'];
+  const userRoleLower = userRole.toLowerCase(); // Standardize for checks
+
+  // Fetch store details only if a storeId exists and the role is one that requires checking,
+  // or if it's a manager role (as they also manage stores)
+  if (storeId && (restrictedRoles.includes(userRole) || userRoleLower === 'manager')) {
+    try {
+      const response = await axios.get(`/api/stores/showstore/${storeId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      storeStatus.value = response.data.store?.status ?? null;
+
+      if (storeStatus.value === 0) {
+        showSnackbar(t('loginPage.storeAccess'), 'error'); // This message will show
+        clearSessionData();
+        if (!isInitialLogin) { // If it's onMounted redirect, we force to login page
+          router.push('/login');
+        }
+        return false; // Access denied
+      } else if (storeStatus.value === null) {
+        console.warn(`Store status not found for store ID: ${storeId}`);
+        showSnackbar(t('loginPage.couldNotVerifyStore'), 'warning');
+        clearSessionData();
+        if (!isInitialLogin) {
+          router.push('/login');
+        }
+        return false; // Access denied if status is ambiguous
+      }
+      // If storeStatus.value is 1, it means access is granted, proceed to redirection below
+    } catch (error) {
+      console.error('Error fetching store details for store ID:', storeId, error);
+      showSnackbar(t('loginPage.fetchDataError'), 'error');
+      clearSessionData();
+      if (!isInitialLogin) {
+        router.push('/login');
+      }
+      return false; // Error occurred, deny access
+    }
+  }
+  // If no storeId, but user is in restrictedRoles, they can't proceed.
+  // This case might be hit if employee showstore didn't return a storeId.
+  else if (!storeId && restrictedRoles.includes(userRole)) {
+      showSnackbar(t('loginPage.noStoreAssociated'), 'error'); // A new translation key
+      clearSessionData();
+      if (!isInitialLogin) {
+          router.push('/login');
+      }
+      return false; // Deny if storeId is mandatory for their role but missing
+  }
+
+
+  // If we reach here, either the role doesn't require a store check,
+  // or the store status check passed (status === 1)
+  switch (userRoleLower) {
+    case 'cashier':
+    case 'caissier':
+      router.push('/cashier/product');
+      break;
+    case 'stock controller':
+    case 'contrôleur de stock':
+      router.push('/stockcontroller/stock');
+      break;
+    case 'staff':
+    case 'personnel':
+      router.push('/dashboard');
+      break;
+    case 'manager':
+      router.push('/store');
+      break;
+    case 'admin':
+      router.push('/admin/dashboard');
+      break;
+    default:
+      console.warn('Unknown role. Redirecting to default /store.');
+      router.push('/store');
+      break;
+  }
+  return true; // Redirection will happen
+};
+
+
 /**
  * Handles the login form submission.
- * Validates inputs, sends credentials to the backend, and handles responses,
- * including fetching and storing the employee's store_id.
  */
 const SubmitLogin = async () => {
   if (!formRef.value) {
@@ -159,12 +253,11 @@ const SubmitLogin = async () => {
   const { valid } = await formRef.value.validate();
 
   if (!valid) {
-    loading.value = false;
     return;
   }
 
   startLoading();
-  loading.value = false;
+  loading.value = true;
 
   try {
     const response = await axios.post('/api/auth/login', {
@@ -174,29 +267,18 @@ const SubmitLogin = async () => {
 
     if (response.data.error) {
       console.error('Login failed:', response.data.error);
-      showSnackbar(response.data.error, 'error'); // Use the error message from the backend if available
+      showSnackbar(response.data.error, 'error');
     } else {
       const token = response.data.token;
       const user = response.data.user;
 
-      // Store token and basic user info
       sessionStorage.setItem('access_token', token);
-      if (user && user.role) {
-        sessionStorage.setItem('userRole', user.role);
-      }
-      if (user && user.id) {
-        sessionStorage.setItem('userId', user.id);
-        sessionStorage.setItem('userEmail', user.email);
-      }
-
-      // Set Authorization header for subsequent requests
+      sessionStorage.setItem('userRole', user.role);
+      sessionStorage.setItem('userId', user.id);
+      sessionStorage.setItem('userEmail', user.email);
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-      console.log('Login successful for user ID:', user.id, 'Role:', user.role);
-      showSnackbar(t('loginPage.loginSuccess'), 'success');
-
-
-      // --- Fetch and Store store_id based on user_id ---
+      let currentStoreId = null;
       if (user && user.id) {
         try {
           const employeeResponse = await axios.get('/api/employees/showstore', {
@@ -204,49 +286,31 @@ const SubmitLogin = async () => {
           });
 
           if (employeeResponse.data.employee && employeeResponse.data.employee.length > 0 && employeeResponse.data.employee[0].store_id) {
-            const storeId = employeeResponse.data.employee[0].store_id; // Access the first element
-            sessionStorage.setItem('storeId', storeId.toString()); // Store as string, session storage only stores strings
-            console.log(`Store ID ${storeId} fetched and stored for user ${user.id}.`);
+            currentStoreId = employeeResponse.data.employee[0].store_id.toString();
+            sessionStorage.setItem('storeId', currentStoreId);
+            console.log(`Store ID ${currentStoreId} fetched and stored for user ${user.id}.`);
           } else {
-            console.warn(`No store_id found for user ${user.id} in employee data or employee array is empty.`);
-            // showSnackbar(t('loginPage.noStoreIdFound'), 'warning');
+            console.warn(`No store_id found for user ${user.id} in employee data.`);
+            // If storeId is critical for their role, checkStoreAccessAndRedirect will handle denial.
           }
         } catch (employeeError: any) {
           console.error('Error fetching user details for user:', user.id, employeeError);
           showSnackbar(t('loginPage.fetchDataError'), 'error');
+          clearSessionData();
+          return;
         }
       }
 
-      // --- Role-based Redirection ---
-      if (user && user.role) {
-        switch (user.role) {
-          case 'Cashier':
-          case 'Caissier':
-            router.push('/cashier/product');
-            break;
-          case 'Stock Controller':
-          case 'Contrôleur de stock':
-            router.push('/stockcontroller/stock');
-            break;
-          case 'staff':
-          case 'Personnel':
-            router.push('/dashboard');
-            break;
-          case 'manager':
-            router.push('/store');
-            break;
-          case 'admin':
-            router.push('/admin/dashboard');
-            break;
-          default:
-            console.warn('Unknown role. Redirecting to default /store.');
-            router.push('/store');
-            break;
-        }
-      } else {
-        console.warn('User role not found in login response. Redirecting to default /store.');
-        router.push('/store');
+      // Perform the store access check and redirection.
+      // Show "Login successful" ONLY if this call allows access/redirects.
+      const canProceed = await checkStoreAccessAndRedirect(
+        user.role, user.id.toString(), token, currentStoreId, true
+      );
+
+      if (canProceed) {
+        showSnackbar(t('loginPage.loginSuccess'), 'success'); // Show success message now
       }
+      // If canProceed is false, checkStoreAccessAndRedirect already showed the 'storeAccess' snackbar
     }
   } catch (apiError: any) {
     console.error('API call error during login:', apiError);
@@ -255,83 +319,65 @@ const SubmitLogin = async () => {
       if (apiError.response.status === 401) {
         showSnackbar(t('loginPage.invalidCredentials'), 'error');
       } else if (apiError.response.status === 403) {
-        // This case might be less common for login directly, but kept for robustness
         showSnackbar(t('loginPage.forbiddenAccess') || apiError.response.data.error, 'error');
       } else if (apiError.response.data && apiError.response.data.message) {
-        // Generic message from backend
         showSnackbar(apiError.response.data.message, 'error');
       } else {
         showSnackbar(t('loginPage.unexpectedError'), 'error');
       }
     } else if (apiError.request) {
-      // The request was made but no response was received
       showSnackbar(t('loginPage.networkError'), 'error');
     } else {
-      // Something else happened in setting up the request
       showSnackbar(t('loginPage.clientError'), 'error');
     }
   } finally {
-   
     stopLoading();
+    loading.value = false;
   }
 };
 
 // --- Lifecycle Hooks ---
-onMounted(() => {
-  // Initialize the message with the translated value
+onMounted(async () => {
   typewriterMessage.value = t('loginPage.welcomeMessage');
   typewriter();
 
-  // Check if already logged in and redirect
   const accessToken = sessionStorage.getItem('access_token');
+
   if (accessToken) {
     const userRoleFromSession = sessionStorage.getItem('userRole');
-    if (userRoleFromSession) {
-      // Redirect based on stored role
-      switch (userRoleFromSession) {
-         case 'Cashier':
-          case 'Caissier':
-            router.push('/cashier/product');
-            break;
-          case 'Stock Controller':
-          case 'Contrôleur de stock':
-            router.push('/stockcontroller/stock');
-            break;
-          case 'staff':
-          case 'Personnel':
-            router.push('/dashboard');
-            break;
-          case 'manager':
-            router.push('/store');
-            break;
-          case 'admin':
-            router.push('/admin/dashboard');
-            break;
-          default:
-            console.warn('Unknown role. Redirecting to default /store.');
-            router.push('/store');
-            break;
-      }
+    const userIdFromSession = sessionStorage.getItem('userId');
+    const storeIdFromSession = sessionStorage.getItem('storeId');
+
+    if (userRoleFromSession && userIdFromSession && storeIdFromSession) {
+      // Use the common function for onMounted check
+      await checkStoreAccessAndRedirect(
+        userRoleFromSession,
+        userIdFromSession,
+        accessToken,
+        storeIdFromSession,
+        false
+      );
     } else {
-      // If token exists but role doesn't, maybe redirect to a default or re-fetch user info
-      router.push('/store');
+      // If token exists but crucial info like role/ID/storeId is missing in session,
+      // it's an incomplete state. Clear session and force re-login.
+      console.warn('Incomplete session data. Clearing and redirecting to login.');
+      clearSessionData();
+      router.push('/login');
     }
   }
 });
 </script>
 
 <style scoped>
-/* Scoped styles for this component */
+/* Your existing styles */
 .backgruond {
- background-image: url('../assets/login-banner.jpg') !important;
+  background-image: url('../assets/login-banner.jpg') !important;
   height: 50%;
   width: 100%;
   display: block;
   position: absolute;
   top: 0;
   background-size: cover;
-  filter: blur(0px); /* Apply blur effect to the background */
+  
 }
-
-/* Any additional specific styles */
 </style>

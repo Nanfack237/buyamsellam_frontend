@@ -862,6 +862,7 @@ function printUsers() {
                 padding-bottom: 10px;
                 border-bottom: 2px solid #eee;
               }
+                
               .report-logo {
                 max-width: 100px;
                 max-height: 80px;

@@ -424,7 +424,7 @@ async function fetchUserDetails() {
     userEmail.value = response.data.user.email;
     userName.value = response.data.user.name || response.data.user.email;
     // Assuming response.data.user.profile_image exists and is the path to the image
-    userImageUrl.value = getImageUrl(response.data.user.profile_image, true);
+    userImageUrl.value = getImageUrl(response.data.user.image);
   } catch (error) {
     console.error('Error fetching user details:', error);
   }

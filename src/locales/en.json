@@ -258,7 +258,8 @@
     "networkError": "Network Error: No response from server. Check your internet connection.",
     "clientError": "An unexpected client-side error occurred.",
     "noStoreIdFound": "No store ID found for your account. Please contact support.",
-    "fetchDataError": "Error fetching user data."
+    "fetchDataError": "Error fetching user data.",
+    "storeAccess": "Access forbidden. The store is inactive for the moment."
   },
 
   "storesPage": {
