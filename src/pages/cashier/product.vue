@@ -357,7 +357,7 @@ const getImageUrl = (path: string | null | undefined) => {
   return path;
 };
 
-const currentStoreId = sessionStorage.getItem('storeId');
+let currentStoreId = sessionStorage.getItem('storeId');
 async function fetchProducts() {
     const token = sessionStorage.getItem('access_token');
     const userId = sessionStorage.getItem('userId');
