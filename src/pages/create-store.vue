@@ -177,7 +177,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from '@/axios';
 import { useLoader } from '@/useLoader';
-import { useI18n } from 'vue-i18n'; // Import useI18n
+import { useI18n } from 'vue-i18n';
 
 // --- Component Imports ---
 import SideBarComponent from '@/components/SideBarComponent.vue';
@@ -187,7 +187,7 @@ import AppFooter from '@/components/AppFooter.vue';
 // --- Composables and Utilities ---
 const router = useRouter();
 const { startLoading, stopLoading, isLoading: isGlobalLoading } = useLoader();
-const { t, locale } = useI18n(); // Initialize useI18n
+const { t, locale } = useI18n();
 
 // --- Reactive State ---
 const name = ref<string>('');
@@ -209,54 +209,62 @@ const snackbarMessage = ref<string>('');
 const snackbarColor = ref<string>('');
 const snackbarTimeout = 3000;
 
-const storeCount = ref<number | null>(null); // To store how many stores the user currently has
-const userStoreLimit = ref<number | null>(null); // To store the maximum limit from user profile
+const storeCount = ref<number | null>(null);
+const userStoreLimit = ref<number | null>(null);
 
-// Correctly type the ref for a Vuetify v-form component
 const storeForm = ref<InstanceType<typeof import('vuetify/components')['VForm']> | null>(null);
 
 // --- Computed Properties ---
 const formattedDate = computed(() => {
   const date = new Date();
   const options: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  // Use the current locale for date formatting
   return date.toLocaleDateString(locale.value, options);
 });
 
+// --- COMMON IMAGE VALIDATION LOGIC (Refined as a composable) ---
+const useCommonImageValidation = () => {
+  const { t } = useI18n(); // `t` must be called inside setup() or a composable.
 
-// Common image validation logic
-const commonImageValidation = (v: File[] | null, isRequired: boolean) => {
-  if (!v || v.length === 0) {
-    return isRequired ? t('createStorePage.imageRequired') : true;
-  }
-  const file = v[0];
-  const maxSize = 2 * 1024 * 1024; // 2 MB
-  const allowedTypes = ['image/png', 'image/jpeg', 'image/bmp'];
+  const validatorFn = (v: File[] | null, isRequired: boolean) => {
+    // Corrected: Handles null/undefined v, empty array, and array with null/undefined first element.
+    if (!v || v.length === 0 || !v[0]) {
+      return isRequired ? t('createStorePage.imageRequired') : true;
+    }
 
-  if (!allowedTypes.includes(file.type)) {
-    return t('createStorePage.imageInvalidType');
-  }
-  if (file.size > maxSize) {
-    return t('createStorePage.imageTooLarge');
-  }
-  return true;
+    const file: File = v[0]; // Now 'file' is guaranteed to be a File object
+    const maxSize = 2 * 1024 * 1024; // 2 MB
+    // Added 'image/gif' for broader compatibility if needed for previews
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/bmp', 'image/gif'];
+
+    if (!allowedTypes.includes(file.type)) {
+      return t('createStorePage.imageInvalidType');
+    }
+    if (file.size > maxSize) {
+      return t('createStorePage.imageTooLarge');
+    }
+    return true;
+  };
+
+  return validatorFn;
 };
+
+// Call the composable to get the validator function in script setup
+const commonImageValidator = useCommonImageValidation();
 
 const imageRules1 = computed(() => {
   return [
-    (v: File[] | null) => commonImageValidation(v, true) // Image 1 is required
+    (v: File[] | null) => commonImageValidator(v, false) // Image 1 is required
   ];
 });
 
 const imageRules2 = computed(() => {
   return [
-    (v: File[] | null) => commonImageValidation(v, false) // Image 2 is optional
+    (v: File[] | null) => commonImageValidator(v, false) // Image 2 is optional
   ];
 });
 
 // Computed property to determine if the user can create a store
 const canUserCreateStore = computed<boolean>(() => {
-  // If storeCount or userStoreLimit are not yet loaded, assume false to disable button by default
   if (storeCount.value === null || userStoreLimit.value === null) {
     return false;
   }
@@ -274,24 +282,30 @@ function showSnackbar(message: string, color: string) {
 const onFileSelected1 = (event: Event) => {
   const input = event.target as HTMLInputElement;
   const files = input.files;
+  console.log('onFileSelected1 triggered. Files:', files); // Debug log
+
   if (files && files.length > 0) {
     const file = files[0];
-    const validationResult = commonImageValidation([file], true);
+    const validationResult = commonImageValidator([file], true); // Use the composable's validator
     if (typeof validationResult === 'string') {
       showSnackbar(validationResult, 'error');
-      imageFile1.value = null;
-      selectedImagePreview1.value = null;
+      imageFile1.value = null; // Clear v-model if validation fails
+      selectedImagePreview1.value = null; // Clear preview
+      console.log('Image 1 validation failed:', validationResult); // Debug log
     } else {
-      imageFile1.value = [file];
+      imageFile1.value = [file]; // Keep v-model updated for rules
       const reader = new FileReader();
       reader.onload = (e) => {
         selectedImagePreview1.value = e.target?.result as string;
+        console.log('Image 1 preview generated:', selectedImagePreview1.value ? 'YES' : 'NO'); // Debug log
+        console.log('Image 1 preview data:', selectedImagePreview1.value ? selectedImagePreview1.value.substring(0, 50) + '...' : 'null'); // Log first 50 chars
       };
       reader.readAsDataURL(file);
     }
   } else {
     imageFile1.value = null;
     selectedImagePreview1.value = null;
+    console.log('No file selected for Image 1, clearing preview.'); // Debug log
   }
 };
 
@@ -299,24 +313,30 @@ const onFileSelected1 = (event: Event) => {
 const onFileSelected2 = (event: Event) => {
   const input = event.target as HTMLInputElement;
   const files = input.files;
+  console.log('onFileSelected2 triggered. Files:', files); // Debug log
+
   if (files && files.length > 0) {
     const file = files[0];
-    const validationResult = commonImageValidation([file], false);
+    const validationResult = commonImageValidator([file], false); // Use the composable's validator
     if (typeof validationResult === 'string') {
       showSnackbar(validationResult, 'error');
-      imageFile2.value = null;
-      selectedImagePreview2.value = null;
+      imageFile2.value = null; // Clear v-model if validation fails
+      selectedImagePreview2.value = null; // Clear preview
+      console.log('Image 2 validation failed:', validationResult); // Debug log
     } else {
-      imageFile2.value = [file];
+      imageFile2.value = [file]; // Keep v-model updated for rules
       const reader = new FileReader();
       reader.onload = (e) => {
         selectedImagePreview2.value = e.target?.result as string;
+        console.log('Image 2 preview generated:', selectedImagePreview2.value ? 'YES' : 'NO'); // Debug log
+        console.log('Image 2 preview data:', selectedImagePreview2.value ? selectedImagePreview2.value.substring(0, 50) + '...' : 'null'); // Log first 50 chars
       };
       reader.readAsDataURL(file);
     }
   } else {
     imageFile2.value = null;
     selectedImagePreview2.value = null;
+    console.log('No file selected for Image 2, clearing preview.'); // Debug log
   }
 };
 
@@ -382,8 +402,12 @@ const createStore = async () => {
   }
   console.log('FORM VALIDATION PASSED.');
 
-  if (!imageFile1.value || imageFile1.value.length === 0) {
-    console.log('IMAGE 1 VALIDATION FAILED: No image file 1 selected.');
+  // IMPORTANT: The `imageRules1` and `imageRules2` handle the "required" validation
+  // directly through the v-file-input rules. If they pass, then imageFile1.value
+  // should ideally contain a file if required.
+  // However, an explicit check here is still good for sanity before FormData.
+  if (!imageFile1.value || imageFile1.value.length === 0 || !imageFile1.value[0]) {
+    console.log('IMAGE 1 VALIDATION FAILED (manual check): No valid image file 1 selected.');
     showSnackbar(t('createStorePage.image1RequiredError'), 'error');
     isSubmitting.value = false;
     return;
@@ -417,6 +441,7 @@ const createStore = async () => {
     formData.append('contact', contact.value);
     formData.append('description', description.value);
 
+    // Ensure we append the actual File object
     if (imageFile1.value && imageFile1.value[0]) {
       formData.append('image1', imageFile1.value[0]);
     }
@@ -434,7 +459,7 @@ const createStore = async () => {
 
     if (response.status === 201) {
       console.log('API RESPONSE SUCCESS (201 CREATED):', response.data);
-      showSnackbar(response.data.success || t('createStorePage.creationSuccess'), 'success');
+      showSnackbar(t('createStorePage.creationSuccess') || response.data.success , 'success');
 
       // Reset form fields
       name.value = '';
@@ -449,13 +474,12 @@ const createStore = async () => {
 
       if (storeForm.value) {
         storeForm.value.resetValidation();
-        storeForm.value.reset();
+        // storeForm.value.reset(); // This might reset v-model for file inputs incorrectly
       }
 
       // Re-fetch store count to update the canUserCreateStore status
       await fetchStoreCount();
       console.log('Store created. Updated store count for permission check.');
-
 
       // Redirect after a slight delay for snackbar visibility
       setTimeout(() => {
@@ -463,7 +487,7 @@ const createStore = async () => {
       }, 2000);
     } else {
       console.error(`API ERROR: Unexpected response status ${response.status}`, response.data);
-      showSnackbar(response.data.error || t('createStorePage.creationUnexpectedError'), 'error');
+      showSnackbar( t('createStorePage.creationUnexpectedError') || response.data.error, 'error');
     }
   } catch (apiError: any) {
     console.error('API CALL FAILED:', apiError);
@@ -477,7 +501,10 @@ const createStore = async () => {
           }
         }
         showSnackbar(errorMessage, 'error');
-      } else if (errorData.message) {
+      } else if (apiError.response.status === 403) { // Specific check for forbidden (limit reached from backend)
+        showSnackbar(t('createStorePage.storeLimitReachedFromBackend') || errorData.message, 'error');
+      }
+      else if (errorData.message) {
         showSnackbar(t('createStorePage.apiErrorWithMessage', { message: errorData.message }), 'error');
       } else if (errorData.error) {
         showSnackbar(t('createStorePage.apiErrorWithError', { error: errorData.error }), 'error');
@@ -556,6 +583,8 @@ onMounted(async () => {
   align-items: center;
   background-color: #f5f5f5;
   border-radius: 5px;
+  /* Added a specific height for the container, adjust as needed */
+  height: 200px;
 }
 
 .no-image-placeholder {

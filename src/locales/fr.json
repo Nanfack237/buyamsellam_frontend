@@ -195,7 +195,7 @@
 
 "loginPage": {
     "logoAlt": "Logo BuyamSellam",
-    "welcomeMessage": "Heureux de vous revoir ! Optimisons votre inventaire et dynamisons votre entreprise, Commencez dès maintenant ! ",
+    "welcomeMessage": "Heureux de vous revoir ! Optimisons votre inventaire et boostons votre entreprise, Commencez dès maintenant ! ",
     "loginTitle": "Connexion BuyamSellam",
     "emailLabel": "Email",
     "emailPlaceholder": "Email",
@@ -206,7 +206,7 @@
     "passwordRequired": "Le mot de passe est requis",
     "passwordMinLength": "Le mot de passe doit contenir au moins {count} caractères !",
     "rememberMe": "Se souvenir de moi",
-    "loginButton": "Connexion",
+    "loginButton": "Se connecter",
     "loading": "Chargement ...",
     "formError": "Erreur d'initialisation du formulaire. Veuillez rafraîchir la page.",
     "loginSuccess": "Connexion réussie !",
@@ -371,7 +371,7 @@
   "inventoryLevel": "Niveau d'inventaire",
   "totalPurchase": "Total des Achats",
   "totalSale": "Total des Ventes",
-  "totalProfit": "Profit Total (FCFA)",
+  "totalProfit": "Profit Total",
   "moreInfo": "plus d'infos",
   "transactionSummary": "Résumé des Transactions",
   "profitPerDay": "Profit par Jour",

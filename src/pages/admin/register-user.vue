@@ -210,13 +210,19 @@ const formattedDate = computed(() => {
 
 const imageRules = computed(() => [
   (v: File[] | null) => {
-    if (!v || v.length === 0) return true; // Image is optional
-    const file = v[0];
+    // If v is null, empty array, or its first element is null/undefined, it's optional.
+    if (!v || v.length === 0 || !v[0]) {
+      return true;
+    }
+    const file = v[0]; // At this point, 'file' is guaranteed to be a File object (or at least not null/undefined)
     const maxSize = 2 * 1024 * 1024; // 2 MB
     return file.size < maxSize || t('addUserVue.image_size_less_than_2mb');
   },
   (v: File[] | null) => {
-    if (!v || v.length === 0) return true; // Image is optional
+    // If v is null, empty array, or its first element is null/undefined, it's optional.
+    if (!v || v.length === 0 || !v[0]) {
+      return true;
+    }
     const file = v[0];
     const allowedTypes = ['image/png', 'image/jpeg', 'image/bmp', 'image/gif', 'image/webp'];
     return allowedTypes.includes(file.type) || t('addUserVue.only_allowed_image_types');

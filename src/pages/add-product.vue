@@ -288,30 +288,30 @@ const categoryOptions = computed<CategoryOption[]>(() => {
  * Validation rules for image file inputs.
  * Checks file size and type.
  */
-const imageRules = computed(() => [
-  (v: File[] | null) => {
-    // If no file is selected or array is empty, it's valid (images are optional)
-    if (!v || v.length === 0) return true;
-    const file = v[0]; // Get the first file from the FileList array
+const imageRules = computed(() => {
 
-    // Basic check if file object is valid
-    if (!file) return true;
+  return [
+    (v: File[] | null) => {
+      if (!v || v.length === 0 || !v[0]) {
+        return true;
+      }
 
-    // Max file size: 2 MB
-    const maxSize = 2 * 1024 * 1024; // 2 MB in bytes
-    if (file.size >= maxSize) {
-      return t('addProductVue.validation.imageSize');
-    }
+      const file = v[0];
+      const maxSize = 2 * 1024 * 1024;
 
-    // Allowed image types
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/bmp', 'image/gif', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
-      return t('addProductVue.validation.imageType');
-    }
-    return true; // File is valid
-  },
-]);
+      if (file.size >= maxSize) {
+        return t('addProductVue.validation.imageSize');
+      }
 
+      const allowedTypes = ['image/png', 'image/jpeg', 'image/bmp', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        return t('addProductVue.validation.imageType');
+      }
+
+      return true;
+    },
+  ];
+});
 // --- Methods ---
 /**
  * Displays a snackbar notification with a translated message.

@@ -16,9 +16,39 @@
 </html>
 
 <style>
-    html{
-        font-size: 15px;
-        font-family: 'Segoe UI';
-        max-height: 100%
-    }
+html {
+  font-size: 15px;
+  font-family: 'Segoe UI';
+  /* This is the key: 'auto' will show the scrollbar ONLY if content overflows */
+  overflow-y: auto;
+  /* Keep this if you never want horizontal scrolling */
+  overflow-x: hidden;
+}
+
+/* Optional: If you want to customize the scrollbar's appearance for Webkit browsers (Chrome, Safari) */
+/* This won't hide it, but allows you to style it */
+html::-webkit-scrollbar {
+  width: 10px; /* Adjust the width of the vertical scrollbar */
+  background-color: #f1f1f1; /* Color of the track */
+}
+
+html::-webkit-scrollbar-thumb {
+  background-color: #888; /* Color of the scrollbar thumb */
+  border-radius: 5px; /* Rounded corners for the thumb */
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background-color: #555; /* Color of the thumb on hover */
+}
+
+/* Optional: For Firefox, you can use 'thin' to make it less prominent */
+html {
+  scrollbar-width: thin; /* auto, thin, or none */
+  scrollbar-color: #888 #f1f1f1; /* thumb color track color */
+}
+
+/* For IE and Edge (less common to style them specifically this way) */
+html {
+  -ms-overflow-style: auto; /* Default for IE/Edge */
+}
 </style>

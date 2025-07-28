@@ -357,10 +357,10 @@ const getImageUrl = (path: string | null | undefined) => {
   return path;
 };
 
+const currentStoreId = sessionStorage.getItem('storeId');
 async function fetchProducts() {
     const token = sessionStorage.getItem('access_token');
     const userId = sessionStorage.getItem('userId');
-    let currentStoreId = sessionStorage.getItem('storeId');
 
     if (!token || !userId) { // Ensure token is also checked here
         showSnackbar('Authentication required. Please log in.', 'error');
@@ -593,7 +593,7 @@ function handleSaleCompleted() {
 // --- Lifecycle Hooks ---
 onMounted(async () => {
   isDataLoaded.value = false;
-  await fetchProducts();
+  fetchProducts();
 });
 </script>
 

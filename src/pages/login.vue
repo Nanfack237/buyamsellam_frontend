@@ -1,26 +1,29 @@
 <template>
   <v-app>
     <div class="backgruond"></div>
-    <v-img src="@/assets/logo1.svg" height="0" width="120" style="padding: 0px; margin: 0PX;" :alt="t('loginPage.logoAlt')" class="mx-4 py-0"></v-img>
+   
     <v-main class="d-flex justify-center align-center">
       <v-row>
 
-        <v-col cols="12" class="py-2" md="7">
+        <!-- <v-col cols="12" class="py-2" md="7">
           <v-card class="px-5 mt-0" variant="text" height="370">
             <h1 class="text-h2" style="color: white;">
                {{ text }} |
               <v-icon color="green-lighten-3">mdi-emoticon-outline</v-icon>
             </h1>
           </v-card>
-        </v-col>
+        </v-col> -->
 
-        <v-col md="5" lg="4" sm="7" class="mx-auto my-auto">
-          <v-card class="mx-6 my-1 pa-4" elevation="12">
+       <v-col cols="10" lg="4" class="mx-auto">
+        
+          <v-card class="mx-6 pa-4" elevation="5">
             <div class="text-center">
+              
               <v-avatar size="80" color="blue-darken-4">
-                <v-icon size="40" color="green-lighten-4">mdi-account</v-icon>
+                <v-icon size="40" >mdi-account</v-icon>
               </v-avatar>
               <span class="p--text pa-4">
+
                 <h2 class="mt-0 pt-4">{{ t('loginPage.loginTitle') }}</h2>
               </span>
             </div>
@@ -320,14 +323,14 @@ onMounted(() => {
 <style scoped>
 /* Scoped styles for this component */
 .backgruond {
-  background-image: url(@/assets/login5.jpg) !important;
-  height: 100%;
+  background-image: url(@/assets/login-banner.jpg) !important;
+  height: 50%;
   width: 100%;
   display: block;
   position: absolute;
   top: 0;
   background-size: cover;
-  filter: blur(3px); /* Apply blur effect to the background */
+  filter: blur(0px); /* Apply blur effect to the background */
 }
 
 /* Any additional specific styles */

@@ -304,14 +304,15 @@ const topCustomerHeaders = computed<DataTableHeader<Customer>[]>(() => ([
 
 
 // --- Methods ---
-function formatNumberWithThousandsSeparator(value: number | string): string {
+function formatNumberWithThousandsSeparator(value: number | string | null): string {
+  if (value === null || value === undefined) return '0';
   if (typeof value === 'number') {
-    return value.toLocaleString('en-US'); // Consider making this locale-aware if needed
+    return value.toLocaleString('en-CM', { style: 'currency', currency: 'XAF', minimumFractionDigits: 0, maximumFractionDigits: 0 });
   }
   if (typeof value === 'string' && !isNaN(Number(value))) {
-    return Number(value).toLocaleString('en-US'); // Consider making this locale-aware if needed
+    return Number(value).toLocaleString('en-CM', { style: 'currency', currency: 'XAF', minimumFractionDigits: 0, maximumFractionDigits: 0 });
   }
-  return String(value); // Return as string if not a valid number
+  return String(value);
 }
 
 async function fetchTotalStock() {

@@ -81,11 +81,7 @@
                     <v-icon>mdi-delete</v-icon>
                   </v-btn>
                 </template>
-                <template v-slot:no-data>
-                  <v-alert :value="true" color="info" icon="mdi-information-outline">
-                    {{ t('products.noData') }}
-                  </v-alert>
-                </template>
+               
               </v-data-table>
             </v-card>
 
