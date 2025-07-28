@@ -323,7 +323,7 @@ onMounted(() => {
 <style scoped>
 /* Scoped styles for this component */
 .backgruond {
-  background-image: url(@/assets/login-banner.jpg) !important;
+ background-image: url('../assets/login-banner.jpg') !important;
   height: 50%;
   width: 100%;
   display: block;
