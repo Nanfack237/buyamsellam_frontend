@@ -415,104 +415,104 @@ function formatNumberWithThousandsSeparator(value: number | string): string {
   return String(value);
 }
 
-// Consolidated print logic for both receipt and report (report functionality remains commented out)
-function printContent(contentRef: HTMLElement | null, title: string, isReceipt: boolean = true): void {
-  if (!contentRef) {
-    console.warn(`${title} print section is not ready.`);
-    showSnackbar(t('saleTransactionsVue.snackbar.printFunctionUnavailable'), 'error');
-    return;
-  }
+// // Consolidated print logic for both receipt and report (report functionality remains commented out)
+// function printContent(contentRef: HTMLElement | null, title: string, isReceipt: boolean = true): void {
+//   if (!contentRef) {
+//     console.warn(`${title} print section is not ready.`);
+//     showSnackbar(t('saleTransactionsVue.snackbar.printFunctionUnavailable'), 'error');
+//     return;
+//   }
 
-  const printContentHtml = contentRef.innerHTML;
-  const printWindow = window.open('', '_blank', 'width=900,height=700');
+//   const printContentHtml = contentRef.innerHTML;
+//   const printWindow = window.open('', '_blank', 'width=900,height=700');
 
-  if (printWindow) {
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>${title}</title>
-          <style>
-            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; color: #333; font-size: 14px;}
+//   if (printWindow) {
+//     printWindow.document.write(`
+//       <html>
+//         <head>
+//           <title>${title}</title>
+//           <style>
+//             body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; color: #333; font-size: 14px;}
 
-            /* General print styles */
-            .receipt-logo, .report-logo {
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-              filter: none !important;
-            }
+//             /* General print styles */
+//             .receipt-logo, .report-logo {
+//               -webkit-print-color-adjust: exact !important;
+//               print-color-adjust: exact !important;
+//               filter: none !important;
+//             }
 
-            /* Receipt specific styles */
-            ${isReceipt ? `
-            .receipt-container { width: 300px; margin: 0 auto; padding: 15px; border: 1px dashed #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
-            .receipt-logo { max-width: 80px; max-height: 50px; margin-bottom: 10px; display: block !important; margin-left: auto; margin-right: auto; }
-            .store-name { font-size: 24px; margin-bottom: 5px; color: black; font-weight: bold; }
-            .store-contact-info { font-size: 12px; color: #777; margin-top: 0; line-height: 1.2; }
-            .receipt-title-section { text-align: center; margin: 20px 0 15px 0; border-top: 1px dashed #eee; padding-top: 15px;}
-            .receipt-title { font-size: 20px; margin-bottom: 5px; color: #555; }
-            .receipt-id { font-size: 12px; color: #888; }
-            .info-section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #eee; }
-            .info-section p { margin: 5px 0; font-size: 13px; }
-            .info-section strong { color: #000; }
-            .items-table-section { margin-bottom: 20px; }
-            .receipt-table { width: 100%; border-collapse: collapse; }
-            .receipt-table th, .receipt-table td { border: 0; padding: 8px 0; text-align: left; font-size: 13px;}
-            .receipt-table th { border-bottom: 1px solid #ddd; padding-bottom: 10px; font-weight: bold; color: #444;}
-            .receipt-table tbody tr:last-child td { border-bottom: none; }
-            .total-section { text-align: right; font-size: 18px; font-weight: bold; margin-top: 20px; padding-top: 15px; border-top: 2px solid #555; }
-            .total-section p { margin: 0; }
-            .footer-section { text-align: center; margin-top: 30px; font-size: 12px; color: #666; line-height: 1.5; }
-            .powered-by { font-style: italic; margin-top: 10px; }
-            ` : `
-            /* Report specific styles (currently not used in this version) */
-            .report-container { width: 100%; margin: 0 auto; padding: 20px; }
-            .report-header-section { text-align: center; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; }
-            .report-logo { max-width: 100px; max-height: 70px; margin-right: 20px; }
-            .report-store-name { font-size: 28px; margin: 0; color: black; font-weight: bold; }
-            .report-store-contact-info { font-size: 14px; color: #777; margin-top: 5px; }
-            .report-title-section { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #eee; padding-bottom: 15px; }
-            .report-title { font-size: 24px; margin-bottom: 10px; color: #333; }
-            .report-date { font-size: 14px; color: #666; }
-            .report-summary { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px dashed #eee; }
-            .report-summary p { margin: 5px 0; font-size: 15px; }
-            .report-table-section { margin-bottom: 30px; }
-            .report-table { width: 100%; border-collapse: collapse; }
-            .report-table th, .report-table td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 13px; }
-            .report-table th { background-color: #f2f2f2; font-weight: bold; color: #333; }
-            .report-table tr:nth-child(even) { background-color: #f9f9f9; }
-            .report-footer-section { text-align: center; margin-top: 40px; font-size: 13px; color: #666; }
-            `}
+//             /* Receipt specific styles */
+//             ${isReceipt ? `
+//             .receipt-container { width: 300px; margin: 0 auto; padding: 15px; border: 1px dashed #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
+//             .receipt-logo { max-width: 80px; max-height: 50px; margin-bottom: 10px; display: block !important; margin-left: auto; margin-right: auto; }
+//             .store-name { font-size: 24px; margin-bottom: 5px; color: black; font-weight: bold; }
+//             .store-contact-info { font-size: 12px; color: #777; margin-top: 0; line-height: 1.2; }
+//             .receipt-title-section { text-align: center; margin: 20px 0 15px 0; border-top: 1px dashed #eee; padding-top: 15px;}
+//             .receipt-title { font-size: 20px; margin-bottom: 5px; color: #555; }
+//             .receipt-id { font-size: 12px; color: #888; }
+//             .info-section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #eee; }
+//             .info-section p { margin: 5px 0; font-size: 13px; }
+//             .info-section strong { color: #000; }
+//             .items-table-section { margin-bottom: 20px; }
+//             .receipt-table { width: 100%; border-collapse: collapse; }
+//             .receipt-table th, .receipt-table td { border: 0; padding: 8px 0; text-align: left; font-size: 13px;}
+//             .receipt-table th { border-bottom: 1px solid #ddd; padding-bottom: 10px; font-weight: bold; color: #444;}
+//             .receipt-table tbody tr:last-child td { border-bottom: none; }
+//             .total-section { text-align: right; font-size: 18px; font-weight: bold; margin-top: 20px; padding-top: 15px; border-top: 2px solid #555; }
+//             .total-section p { margin: 0; }
+//             .footer-section { text-align: center; margin-top: 30px; font-size: 12px; color: #666; line-height: 1.5; }
+//             .powered-by { font-style: italic; margin-top: 10px; }
+//             ` : `
+//             /* Report specific styles (currently not used in this version) */
+//             .report-container { width: 100%; margin: 0 auto; padding: 20px; }
+//             .report-header-section { text-align: center; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; }
+//             .report-logo { max-width: 100px; max-height: 70px; margin-right: 20px; }
+//             .report-store-name { font-size: 28px; margin: 0; color: black; font-weight: bold; }
+//             .report-store-contact-info { font-size: 14px; color: #777; margin-top: 5px; }
+//             .report-title-section { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #eee; padding-bottom: 15px; }
+//             .report-title { font-size: 24px; margin-bottom: 10px; color: #333; }
+//             .report-date { font-size: 14px; color: #666; }
+//             .report-summary { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px dashed #eee; }
+//             .report-summary p { margin: 5px 0; font-size: 15px; }
+//             .report-table-section { margin-bottom: 30px; }
+//             .report-table { width: 100%; border-collapse: collapse; }
+//             .report-table th, .report-table td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 13px; }
+//             .report-table th { background-color: #f2f2f2; font-weight: bold; color: #333; }
+//             .report-table tr:nth-child(even) { background-color: #f9f9f9; }
+//             .report-footer-section { text-align: center; margin-top: 40px; font-size: 13px; color: #666; }
+//             `}
 
-            @media print {
-              body {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-              }
-              .receipt-container, .report-container {
-                border: none;
-                box-shadow: none;
-              }
-            }
-          </style>
-        </head>
-        <body>
-          ${printContentHtml}
-          <script>
-            window.onload = function() {
-              window.print();
-              window.onafterprint = function() {
-                window.close();
-              };
-            };
-          <\/script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-  } else {
-    showSnackbar(t('saleTransactionsVue.snackbar.popupsBlocked'), 'error');
-  }
-}
+//             @media print {
+//               body {
+//                 -webkit-print-color-adjust: exact !important;
+//                 print-color-adjust: exact !important;
+//               }
+//               .receipt-container, .report-container {
+//                 border: none;
+//                 box-shadow: none;
+//               }
+//             }
+//           </style>
+//         </head>
+//         <body>
+//           ${printContentHtml}
+//           <script>
+//             window.onload = function() {
+//               window.print();
+//               window.onafterprint = function() {
+//                 window.close();
+//               };
+//             };
+//           <\/script>
+//         </body>
+//       </html>
+//     `);
+//     printWindow.document.close();
+//     printWindow.focus();
+//   } else {
+//     showSnackbar(t('saleTransactionsVue.snackbar.popupsBlocked'), 'error');
+//   }
+// }
 
 function printReceipt() {
   if (selectedSales.value.length === 0) {

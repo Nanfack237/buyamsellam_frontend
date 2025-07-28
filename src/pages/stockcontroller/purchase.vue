@@ -628,10 +628,10 @@ function downloadExcel() {
 }
 
 
-function viewPurchase(item: any) {
-  console.log('Viewing purchase for:', item);
-  showSnackbar('purchaseTransactionsVue.viewingTransactionId', 'info', { id: item.id });
-}
+// function viewPurchase(item: any) {
+//   console.log('Viewing purchase for:', item);
+//   showSnackbar('purchaseTransactionsVue.viewingTransactionId', 'info', { id: item.id });
+// }
 
 // --- Lifecycle Hooks ---
 onMounted(async () => {

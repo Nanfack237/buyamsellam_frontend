@@ -3,7 +3,7 @@
     <v-card>
       <v-layout>
         <SideBarComponent />
-        <HeaderComponent />
+         <HeaderComponent :products="[]" :storeIdProp="null" />
 
         <v-main v-if="isDataLoaded" class="h-screen" style="min-height: max-content;">
           <v-row justify="space-between" class="d-flex justify-center px-5 py-5 pb-2">
