@@ -1,8 +1,7 @@
 <template>
   <v-app>
     <div class="backgruond">
-
-      <v-img src="@/assets/logo1.svg" height="0" width="120" style="padding: 0px; margin: 0PX;" :alt="t('loginPage.logoAlt')" class="mx-4 py-0"></v-img>
+      
     </div>
 
     <v-main class="d-flex justify-center align-center">
@@ -371,13 +370,13 @@ onMounted(async () => {
 <style scoped>
 /* Your existing styles */
 .backgruond {
-  background-image: url('../assets/login-banner.jpg') !important;
+  background-image: url(@/assets/login-banner.jpg) !important;
   height: 50%;
   width: 100%;
   display: block;
   position: absolute;
   top: 0;
   background-size: cover;
-  
+  filter: blur(0px); /* Apply blur effect to the background */
 }
 </style>
