@@ -196,7 +196,7 @@
 "loginPage": {
     "logoAlt": "Logo BuyamSellam",
     "welcomeMessage": "Heureux de vous revoir ! Optimisons votre inventaire et boostons votre entreprise, Commencez dès maintenant ! ",
-    "loginTitle": "Connexion BuyamSellam",
+    "loginTitle": "Connexion",
     "emailLabel": "Email",
     "emailPlaceholder": "Email",
     "emailRequired": "L'e-mail est requis",

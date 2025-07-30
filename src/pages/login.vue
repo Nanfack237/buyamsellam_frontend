@@ -13,7 +13,7 @@
           <v-card class="mx-6 pa-4" elevation="5">
             <div class="text-center">
               <v-avatar size="80" color="blue-darken-4">
-                <v-icon size="40">mdi-account</v-icon>
+                <v-icon size="40" >mdi-account</v-icon>
               </v-avatar>
               <span class="p--text pa-4">
                 <h2 class="mt-0 pt-4">{{ t('loginPage.loginTitle') }}</h2>

@@ -235,10 +235,10 @@
     "print_section_not_ready": "Print section is not ready."
   },
 
-"loginPage": {
+  "loginPage": {
     "logoAlt": "BuyamSellam Logo",
     "welcomeMessage": "Glad you're here! Let's optimize your inventory and boost your business, Get started! ",
-    "loginTitle": "BuyamSellam Login",
+    "loginTitle": "Login",
     "emailLabel": "Email",
     "emailPlaceholder": "Email",
     "emailRequired": "E-mail is required",
