@@ -252,20 +252,8 @@ watch(
   () => route.name,
   (name) => {
     if ((name as string) === 'login') {
-      stopInactivityWatcher();
-      if (countdownInterval !== null) {
-        clearInterval(countdownInterval);
-        countdownInterval = null;
-      }
-      showWarning.value = false;
-      reauthenticateDialog.value = false;
-      reauthenticatePassword.value = '';
-      reauthenticateError.value = '';
+     
       localStorage.removeItem('reauthenticateDialogActive');
-    } else {
-      if (!reauthenticateDialog.value) {
-        startWatcher();
-      }
     }
   },
   { immediate: true }

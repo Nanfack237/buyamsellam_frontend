@@ -163,7 +163,7 @@
     "max_2mb_image_types": "Max 2 Mo. Types autorisés : PNG, JPG/JPEG, BMP, GIF, WebP.",
     "only_allowed_image_types": "Seules les images PNG, JPG/JPEG, BMP, GIF, WebP sont autorisées.",
     "no_photo_selected": "Aucune photo sélectionnée",
-    "save_changes": "Enregistrer les modifications",
+    "save_changes": "Modifier",
     "cancel": "Annuler",
     "authentication_missing": "Authentification manquante. Veuillez vous connecter.",
     "failed_to_load_users": "Échec du chargement des utilisateurs.",
@@ -193,7 +193,7 @@
     "print_section_not_ready": "La section d'impression n'est pas prête."
   },
 
-"loginPage": {
+  "loginPage": {
     "logoAlt": "Logo BuyamSellam",
     "welcomeMessage": "Heureux de vous revoir ! Optimisons votre inventaire et boostons votre entreprise, Commencez dès maintenant ! ",
     "loginTitle": "Connexion",
@@ -211,7 +211,7 @@
     "formError": "Erreur d'initialisation du formulaire. Veuillez rafraîchir la page.",
     "loginSuccess": "Connexion réussie !",
     "invalidCredentials": "Identifiants invalides. Veuillez vérifier votre e-mail et votre mot de passe.",
-    "forbiddenAccess": "Accès interdit. Vous n'avez pas la permission. Veuillez contacter le support système.",
+    "forbiddenAccess": "Accès interdit. Vous n'avez pas la permission. Veuillez contacter le support.",
     "unexpectedError": "Une erreur inattendue est survenue. Veuillez réessayer plus tard.",
     "networkError": "Erreur réseau : Aucune réponse du serveur. Vérifiez votre connexion internet.",
     "clientError": "Une erreur inattendue côté client est survenue.",
@@ -342,7 +342,7 @@
     "customerSingular": "Boutique",
     "customerPlural": "Boutiques",
     "report_table_sn": "N°",
-    "powered_by_message": "Propulsé par BuyamSellam (Soyez un gérant)"
+    "powered_by_message": "Propulsé par BuyamSellam (Soyez un gestionnaire)"
   },
 
   "inactiveWarning": {
@@ -1088,7 +1088,7 @@
     "photo": "Photo",
     "active": "Actif",
     "inactive": "Inactif",
-    "save_changes": "Enregistrer les modifications",
+    "save_changes": "Modifier",
     "cancel": "Annuler",
     "close": "Fermer",
     "employee_details": "Détails de l'employé",

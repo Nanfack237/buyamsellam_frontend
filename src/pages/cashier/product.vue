@@ -346,7 +346,7 @@ function showSnackbar(message: string, color: string = 'info') {
   snackbar.value = true;
 }
 
-const backendUrl = 'http://localhost:8000'; // **CRITICAL: Ensure this matches your Laravel backend URL**
+const backendUrl = 'https://api.buyam-sellam.oc-classic.com'; // **CRITICAL: Ensure this matches your Laravel backend URL**
 const getImageUrl = (path: string | null | undefined) => {
   if (!path) {
     return 'https://via.placeholder.com/200x200?text=No+Image';

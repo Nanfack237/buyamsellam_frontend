@@ -304,7 +304,7 @@ const contactRules = [
 ];
 
 // Backend URL from environment variables
-const backendUrl = 'http://localhost:8000'; // Make sure this is correctly configured
+const backendUrl = 'https://api.buyam-sellam.oc-classic.com'; // Make sure this is correctly configured
 
 // --- General Methods ---
 /**

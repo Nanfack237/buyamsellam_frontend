@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const token = sessionStorage.getItem('access_token')
 const selectedStore = sessionStorage.getItem('storeId')
-axios.defaults.baseURL = 'http://127.0.0.1:8000/';
+axios.defaults.baseURL = 'https://api.buyam-sellam.oc-classic.com';
 
 if(token){
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;

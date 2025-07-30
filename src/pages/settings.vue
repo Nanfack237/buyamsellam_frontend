@@ -446,7 +446,7 @@ const snackbarColor = ref('');
 const router = useRouter();
 
 // --- Backend URL Configuration ---
-const backendUrl = 'http://localhost:8000'; // Make sure this matches your Laravel backend URL
+const backendUrl = 'https://api.buyam-sellam.oc-classic.com'; // Make sure this matches your Laravel backend URL
 
 // --- Helper for Image URL ---
 const getImageUrl = (path: string | null) => {

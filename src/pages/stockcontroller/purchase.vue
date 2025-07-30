@@ -196,7 +196,7 @@ type DataTableHeader<T> = VDataTableInternalHeaders[number] & {
   value?: keyof T | 'data-table-expand' | 'data-table-select' | (string & {});
 };
 
-const backendUrl = 'http://localhost:8000'; // Make sure this matches your Laravel backend URL
+const backendUrl = 'https://api.buyam-sellam.oc-classic.com'; // Make sure this matches your Laravel backend URL
 
 // --- Helper Function for Logo URL ---
 const getLogoUrl = (logoPath: string | undefined | null) => {

@@ -62,7 +62,7 @@ const hasStoreId = ref(false);
 // userRole is not explicitly used in this template, but often fetched for sidebars
 // const userRole = ref(''); 
 
-const backendUrl = 'http://localhost:8000'; // MAKE SURE THIS MATCHES YOUR LARAVEL APP_URL OR ASSET_URL
+const backendUrl = 'https://api.buyam-sellam.oc-classic.com'; // MAKE SURE THIS MATCHES YOUR LARAVEL APP_URL OR ASSET_URL
 
 // --- Computed Properties ---
 const userProfileImage = computed(() => {

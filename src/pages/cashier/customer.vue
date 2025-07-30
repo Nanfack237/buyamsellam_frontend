@@ -226,7 +226,7 @@ function showSnackbar(message: string, color: string) {
   snackbar.value = true;
 }
 
-const backendUrl = 'http://localhost:8000';
+const backendUrl = 'https://api.buyam-sellam.oc-classic.com';
 
 const getLogoUrl = (logoPath: string | undefined | null) => {
   if (logoPath && !logoPath.startsWith('http') && !logoPath.includes('storage')) {

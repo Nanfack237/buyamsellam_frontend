@@ -25,6 +25,7 @@
             <v-col cols="12" md="3" sm="6">
               <v-text-field
                 v-model="search"
+                density="compact"
                 :label="$t('employeeVue.search_by_name')"
                 prepend-inner-icon="mdi-magnify"
                 variant="solo-filled"
@@ -59,7 +60,7 @@
                 <template v-slot:item.image="{ item }">
                   <img
                     :src="getLogoUrl(item.image)"
-                    :alt="$t('employeeVue.employee_photo')"
+                    :alt="$t('employeeVue.photo')"
                     style="height: 50px; width: 50px; border-radius: 25px; object-fit: cover;"
                     class="my-1"
                   />
@@ -333,7 +334,7 @@
                     </v-list-item>
                     <v-list-item>
                       <v-list-item-title class="font-weight-medium">{{ $t('employeeVue.date_hired') }}:</v-list-item-title>
-                      <v-list-item-subtitle>{{ new Date(currentEmployee.created_at).toLocaleDateString() }}</v-list-item-subtitle>
+                      <v-list-item-subtitle>{{ currentEmployee.created_at.slice(0, 10) }}</v-list-item-subtitle>
                     </v-list-item>
                   </v-list>
                 </v-col>
@@ -438,16 +439,17 @@ const formattedDate = computed(() => {
   return date.toLocaleDateString(locale.value, options);
 });
 
-const datePrint = computed(() => {
-  const date = new Date();
-  // Using 'en-CA' or 'fr-CA' (Canadian English/French) often yields YYYY-MM-DD consistently.
-  // Alternatively, you could use 'en-US' and then manually reverse the order if needed, but this is cleaner.
-  return new Intl.DateTimeFormat(`${locale.value}-CA`, { // Or 'fr-CA' if you prefer French locale specifically for formatting
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  }).format(date);
-});
+function formatDateDDMMYYYY(date: Date): string {
+  const day = String(date.getDate()).padStart(2, '0'); // Get day (1-31) and pad with '0' if single digit
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // Get month (0-11) so add 1, pad with '0'
+  const year = date.getFullYear(); // Get full year
+
+  return `${day}-${month}-${year}`;
+}
+
+// Example Usage:
+const today = new Date(); // Or any other date object
+const datePrint = formatDateDDMMYYYY(today);
 
 
 const filteredEmployee = computed<Employee[]>(() => {
@@ -508,7 +510,7 @@ function showSnackbar(message: string, color: string) {
  * @param path The relative path to the image, a File object, or null.
  * @returns The absolute URL for the image.
  */
-const backendUrl = 'http://localhost:8000';
+const backendUrl = 'https://api.buyam-sellam.oc-classic.com';
 
 const getLogoUrl = (logoPath: string | undefined | null) => {
   if (logoPath && !logoPath.startsWith('http') && !logoPath.includes('storage')) {

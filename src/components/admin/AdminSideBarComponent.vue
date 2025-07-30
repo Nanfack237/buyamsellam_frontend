@@ -141,7 +141,7 @@ const storeName = ref('');
 const hasStoreId = ref(false);
 const userRole = ref(''); // New reactive ref for user role
 
-const backendUrl = 'http://localhost:8000'; // MAKE SURE THIS MATCHES YOUR LARAVEL APP_URL OR ASSET_URL
+const backendUrl = 'http://127.0.0.1:8000'; // MAKE SURE THIS MATCHES YOUR LARAVEL APP_URL OR ASSET_URL
 
 // --- Computed Properties ---
 const userProfileImage = computed(() => {
@@ -159,22 +159,22 @@ const defaultAvatar = 'https://via.placeholder.com/150/0D47A1/FFFFFF?text=USER';
 // Computed property to check if the user is a staff member
 const isStaff = computed(() => userRole.value === 'staff' || userRole.value === 'Personnel');
 
-const shortageProducts = ref([])
-const fetchShortages = async () => {
-  try {
-    const token = sessionStorage.getItem('access_token'); // Ensure token is present for this call too
-    if (!token) {
-      console.warn('No access token found for fetching shortages.');
-      return;
-    }
-    const res = await axios.get('/api/stocks/shortage', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    shortageProducts.value = res.data.shortage;
-  } catch (e) {
-    console.error('Failed to fetch shortages:', e);
-  }
-}
+// const shortageProducts = ref([])
+// const fetchShortages = async () => {
+//   try {
+//     const token = sessionStorage.getItem('access_token'); // Ensure token is present for this call too
+//     if (!token) {
+//       console.warn('No access token found for fetching shortages.');
+//       return;
+//     }
+//     const res = await axios.get('/api/stocks/shortage', {
+//       headers: { 'Authorization': `Bearer ${token}` }
+//     });
+//     shortageProducts.value = res.data.shortage;
+//   } catch (e) {
+//     console.error('Failed to fetch shortages:', e);
+//   }
+// }
 
 // --- Methods ---
 const toggleRail = () => {
@@ -226,7 +226,7 @@ onMounted(async () => {
         storeName.value = 'Error Loading Store';
       }
     } else {
-      console.warn('storeId not found in sessionStorage. Cannot display store name.');
+      
       storeName.value = 'No Store Assigned';
       hasStoreId.value = false;
     }
@@ -241,8 +241,7 @@ onMounted(async () => {
     stopLoading();
   }
 
-  // Call fetchShortages onMounted as well (ensure it runs after auth token is set)
-  fetchShortages();
+ 
 });
 </script>
 

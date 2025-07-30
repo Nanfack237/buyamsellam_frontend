@@ -182,7 +182,7 @@
 
       <div class="receipt-title-section">
         <h3 class="receipt-title">{{ t('receipt.receiptTitle') }}</h3>
-        <p class="receipt-id">{{ t('receipt.receiptId') }}{{ getReceiptId }}</p>
+        <p class="receipt-id">{{ t('receipt.receiptId') }} {{ getReceiptId }}</p>
 
       </div>
 
@@ -319,6 +319,18 @@ const datePrint = computed(() => {
   }).format(date);
 });
 
+function formatDateDDMMYYYY(date: Date): string {
+  const day = String(date.getDate()).padStart(2, '0'); // Get day (1-31) and pad with '0' if single digit
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // Get month (0-11) so add 1, pad with '0'
+  const year = date.getFullYear(); // Get full year
+
+  return `${day}-${month}-${year}`;
+}
+
+// Example Usage:
+const today = new Date(); // Or any other date object
+const formatted = formatDateDDMMYYYY(today);
+
 const receiptCustomerName = computed(() => {
   return lastSaleCustomerName.value || t('receipt.anonymousCustomer');
 });
@@ -341,7 +353,7 @@ function showSnackbar(message: string, color: string = 'info', timeout: number =
   snackbar.value = true;
 }
 
-const backendUrl = 'http://localhost:8000';
+const backendUrl = 'https://api.buyam-sellam.oc-classic.com';
 const getImageUrl = (path: string | undefined | null) => {
   if (path && !path.startsWith('http') && !path.includes('storage')) {
     return `${backendUrl}/storage/${path}`;
@@ -644,7 +656,7 @@ async function sendReceiptToManager(items: SaleReceiptItem[], total: number, cus
       receipt_id: receiptId,
       customer_name: customer,
       cashier_name: userName.value,
-      sale_date: new Date().toLocaleDateString(),
+      sale_date: formatted,
       items: items.map(item => ({
         name: item.product.name,
         quantity: item.quantity,

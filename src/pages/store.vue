@@ -213,7 +213,7 @@ onMounted(async () => {
 });
 
 // --- Methods ---
-const backendUrl = 'http://localhost:8000'; // Ensure this is correct for your backend
+const backendUrl = 'https://api.buyam-sellam.oc-classic.com'; // Ensure this is correct for your backend
 
 const getImageUrl = (path: string): string => {
   if (!path) return 'https://via.placeholder.com/150?text=No+Image'; // Fallback if path is null/empty

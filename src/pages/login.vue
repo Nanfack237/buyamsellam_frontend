@@ -2,15 +2,15 @@
   <v-app>
     <div class="backgruond">
       <div class="logo-and-text-container">
-        <v-img src="@/assets/logo1.svg" height="170" width="120" :alt="t('loginPage.logoAlt')" class="mr-5 py-0"></v-img>
-        <span class="brand-name"><span style="color: rgb(13, 71, 161, 5);">Buyam</span><span style="color: rgba(100, 200, 150, 0.6);">Sellam</span></span>
+        <v-img src="@/assets/logo1.svg" height="170" width="120" :alt="t('loginPage.logoAlt')" class="logo-img"></v-img>
+        <div class="brand-name"><span style="color: rgb(13, 71, 161, 5);">Buyam</span><span style="color: rgba(100, 200, 150, 0.6);">Sellam</span></div>
       </div>
     </div>
 
     <v-main class="d-flex justify-center align-center">
       <v-row>
         <v-col cols="10" lg="4" md="6" sm="6" class="mx-auto">
-          <v-card class="mx-6 pa-4" elevation="5">
+          <v-card class="mx-6 pa-4 my-5" elevation="5">
             <div class="text-center">
               <v-avatar size="80" color="blue-lighten-4">
                 <v-img src="@/assets/logo1.svg" height="50" width="50" :alt="t('loginPage.logoAlt')" class="mr-1 mb-1 "></v-img>
@@ -95,15 +95,9 @@ const index = ref<number>(0);
 const typewriterMessage = ref<string>(t('loginPage.welcomeMessage'));
 
 // --- Form Validation Rules ---
-const emailRules = [
-  (v: string) => !!v || t('loginPage.emailRequired'),
-  (v: string) => /.+@.+\..+/.test(v) || t('loginPage.emailValid'),
-];
+const emailRules = [  (v: string) => !!v || t('loginPage.emailRequired'),  (v: string) => /.+@.+\..+/.test(v) || t('loginPage.emailValid'),];
 
-const passwordRules = [
-  (v: string) => !!v || t('loginPage.passwordRequired'),
-  (v: string) => (v && v.length >= 8) || t('loginPage.passwordMinLength', { count: 8 }),
-];
+const passwordRules = [  (v: string) => !!v || t('loginPage.passwordRequired'),  (v: string) => (v && v.length >= 8) || t('loginPage.passwordMinLength', { count: 8 }),];
 
 const formRef = ref<InstanceType<typeof import('vuetify/components')['VForm']> | null>(null);
 
@@ -228,7 +222,7 @@ const checkStoreAccessAndRedirect = async (
       router.push('/dashboard');
       break;
     case 'manager':
-      router.push('/store');
+    router.push('/store');
       break;
     case 'admin':
       router.push('/admin/dashboard');
@@ -259,7 +253,7 @@ const SubmitLogin = async () => {
   }
 
   startLoading();
-  loading.value = true;
+  
 
   try {
     const response = await axios.post('/api/auth/login', {
@@ -334,7 +328,7 @@ const SubmitLogin = async () => {
     }
   } finally {
     stopLoading();
-    loading.value = false;
+    
   }
 };
 
@@ -371,7 +365,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* Your existing styles */
 .backgruond {
   background-image: url(@/assets/loginBanner.jpg) !important;
   height: 50%;
@@ -379,24 +372,183 @@ onMounted(async () => {
   position: absolute;
   top: 0;
   background-size: cover;
-
-  display: flex; /* Makes .backgruond a flex container */
-  justify-content: center; /* Centers items horizontally */
- 
-  
+  background-position: center;
+  background-repeat: no-repeat;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .logo-and-text-container {
-  display: flex; /* Makes this a flex container */
-  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 15%;
+}
+
+.logo-img {
+  height: 170px;
+  width: 120px;
+  margin-right: 20px;
 }
 
 .brand-name {
-  color: white; /* Choose a color that stands out on your background */
-  font-size: 50px; /* Adjust font size as needed */
-  font-weight: bold; /* Make it bold */
-  margin-top: 50px;
-  display: flex;
-  /* Add any other text styling you want */
+  color: white;
+  font-size: 50px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+/* Specific rule for small screens in landscape mode */
+@media (max-height: 430px) and (orientation: landscape) {
+  .logo-and-text-container {
+    display: none; /* Hide the entire container including logo and brand name */
+  }
+  /* Optional: You might want to adjust the v-main or v-card's top margin
+     or padding in this scenario if the login card needs to shift up.
+     For example: */
+  /*
+  .v-main {
+    padding-top: 0 !important;
+    align-items: flex-start !important; // Align content to top
+  }
+  .v-card {
+    margin-top: 20px !important; // Adjust card position
+  }
+  */
+}
+
+
+/* Extra Small screens (e.g., most mobile phones in portrait) */
+@media (min-width: 100px) and (max-width: 480px) {
+  .logo-and-text-container {
+    gap: 0;
+    margin-bottom: 50%;
+  }
+
+  .logo-img {
+    display: none;
+  }
+
+  .brand-name {
+    font-size: 42px;
+  }
+}
+
+/* Smaller tablets / larger phones in portrait or landscape */
+@media (min-width: 481px) and (max-width: 724px) {
+  .logo-and-text-container {
+    gap: 10px;
+    margin-bottom: 35%;
+  }
+
+  .logo-img {
+    height: 120px;
+    width: 90px;
+    margin-right: 15px;
+  }
+  .brand-name {
+    font-size: 40px; /* Added brand-name font size for this range */
+  }
+}
+
+/* Medium tablets in portrait or landscape */
+@media (min-width: 725px) and (max-width: 1000px) {
+  .logo-and-text-container {
+    gap: 10px;
+    margin-bottom: 28%;
+  }
+
+  .logo-img {
+    height: 120px;
+    width: 90px;
+    margin-right: 15px;
+  }
+  .brand-name {
+    font-size: 45px; /* Added brand-name font size for this range */
+  }
+}
+
+/* Larger tablets / small laptops */
+@media (min-width: 1001px) and (max-width: 1333px) {
+  .logo-and-text-container {
+    gap: 10px;
+    margin-bottom: 20%;
+  }
+
+  .logo-img {
+    height: 120px;
+    width: 90px;
+    margin-right: 15px;
+  }
+  .brand-name {
+    font-size: 50px; /* Keeping default for this range */
+  }
+}
+
+/* Medium desktops */
+@media (min-width: 1334px) and (max-width: 1669px) {
+  .logo-and-text-container {
+    gap: 10px;
+    margin-bottom: 18%;
+  }
+
+  .logo-img {
+    height: 120px;
+    width: 90px;
+    margin-right: 15px;
+  }
+  .brand-name {
+    font-size: 50px; /* Keeping default for this range */
+  }
+}
+
+/* Large desktops (just below full HD) */
+@media (min-width: 1670px) and (max-width: 1919px) {
+  .logo-and-text-container {
+    gap: 10px;
+    margin-bottom: 15%;
+  }
+
+  .logo-img {
+    height: 120px;
+    width: 90px;
+    margin-right: 15px;
+  }
+  .brand-name {
+    font-size: 50px; /* Keeping default for this range */
+  }
+}
+
+
+/* Extra Large screens (from 1920px up to 2560px) */
+@media (min-width: 1920px) and (max-width: 2560px) {
+  .logo-and-text-container {
+    margin-bottom: 15%;
+  }
+  .logo-img {
+    height: 200px;
+    width: 150px;
+    margin-right: 25px;
+  }
+  .brand-name {
+    font-size: 60px; /* Set brand-name font size for this range */
+  }
+}
+
+/* Ultra Large screens (larger than 2560px) */
+@media (min-width: 2561px) {
+  .logo-and-text-container {
+    margin-bottom: 10%;
+  }
+  .logo-img {
+    height: 250px;
+    width: 180px;
+    margin-right: 30px;
+  }
+  .brand-name {
+    font-size: 75px;
+  }
 }
 </style>

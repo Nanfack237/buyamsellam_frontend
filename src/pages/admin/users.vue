@@ -1,372 +1,356 @@
 <template>
   <v-app>
-    <side-bar-component />
-    <header-component />
+    <v-card>
+      <v-layout>
+        <SideBarComponent />
+        <HeaderComponent />
 
-    <v-main>
-      <v-container fluid class="pa-6">
-        <v-card class="pa-4">
-          <v-card-title class="d-flex align-center justify-space-between">
-            <div>
-              <span class="text-h5">{{ t('userVue.user_management') }}</span>
-              <p class="text-subtitle-1 text-grey">{{ formattedDate }}</p>
-            </div>
-            <v-spacer></v-spacer>
-            <v-text-field
-              v-model="search"
-              density="compact"
-              prepend-inner-icon="mdi-magnify"
-              :label="t('userVue.search_users')"
-              hide-details
-              variant="solo-filled"
-              flat
-              class="max-w-md"
-            ></v-text-field>
-          </v-card-title>
+        <v-main v-if="isDataLoaded" class="h-screen" style="min-height: max-content;">
+          <v-row justify="space-between" class="d-flex justify-center px-5 py-5 pb-2">
+            <v-col cols="auto">
+              <p class="text-high-emphasis text-h6">
+                {{ $t('userVue.user_list') }}
+              </p>
+            </v-col>
 
-          <v-card-text>
-            <v-row>
-              <v-col cols="12" md="6" class="d-flex align-center">
-                <v-btn
-                  color="primary"
-                  prepend-icon="mdi-plus"
-                  class="mr-2"
-                  @click="openEditDialog()"
-                >
-                  {{ t('userVue.add_new_user') }}
+            <v-col cols="auto">
+              <p class="text-right text-medium-emphasis">
+                {{ formattedDate }}
+              </p>
+            </v-col>
+            <v-divider class="border-opacity-100" color="grey-lighten-1"></v-divider>
+          </v-row>
+
+          <v-row justify="end" class="d-flex px-5 pt-2">
+            <v-col cols="12" md="3" sm="6">
+              <v-text-field
+                v-model="search"
+                density="compact"
+                :label="$t('userVue.search_by_name')"
+                prepend-inner-icon="mdi-magnify"
+                variant="solo-filled"
+                flat
+                hide-details
+                single-line
+              />
+            </v-col>
+          </v-row>
+
+          <v-row class="px-7">
+            <v-card elevation="4" width="3000" class="my-2 py-2 px-5">
+              <p class="text-high-emphasis py-2">
+                <b>{{ selectedUser.length || filteredUser.length }}</b>
+                {{ (selectedUser?.length ?? 0) === 1 ? $t('user') : $t('users') }}
+              </p>
+              <v-divider class="border-opacity-100" color="grey-lighten-1"></v-divider>
+
+              <v-data-table
+                :items="filteredUser"
+                :headers="headers"
+                item-value="id"
+                class="centered-headers"
+                show-select
+                v-model="selectedUser"
+                return-object
+                :sort-by="[{ key: 'id', order: 'desc' }]"
+              >
+                <template #item.index="{ index }">
+                  {{ index + 1 }}
+                </template>
+                <template v-slot:item.image="{ item }">
+                  <img
+                    :src="getImageUrl(item.image)"
+                    :alt="$t('userVue.photo')"
+                    style="height: 50px; width: 50px; border-radius: 25px; object-fit: cover;"
+                    class="my-1"
+                  />
+                </template>
+
+                <template #item.created_at="{ item }">
+                  {{ item.created_at ? item.created_at.slice(0, 10) : 'N/A' }}
+                </template>
+
+                <template #item.status="{ item }">
+                  
+                  <v-chip v-if="item.status === 0" color="red" class="ma-2" label>
+                   {{ $t('inactive') }} 
+                  </v-chip>
+                  <v-chip v-else color="success" class="ma-2" label>
+                   {{ $t('active') }} 
+                  </v-chip>
+                </template>
+
+                <template v-slot:item.actions="{ item }">
+                  <v-btn icon size="small" class="mx-2" color="warning" @click="openEditDialog(item)">
+                    <v-icon>mdi-pencil</v-icon>
+                  </v-btn>
+
+                  <v-btn icon size="small" :title="$t('userVue.view_user')" class="mx-2" color="secondary" @click="viewUser(item)">
+                    <v-icon>mdi-eye</v-icon>
+                  </v-btn>
+                </template>
+              </v-data-table>
+            </v-card>
+
+            <v-row justify="end" class="my-1">
+              <v-col cols="auto">
+                <v-btn color="green-darken-2" variant="flat" :title="$t('userVue.download_excel_file')" @click="downloadExcel" class="mb-4 mx-2">
+                  <v-icon>mdi-microsoft-excel</v-icon> {{ $t('userVue.excel') }}
                 </v-btn>
-                <v-btn
-                  color="success"
-                  prepend-icon="mdi-microsoft-excel"
-                  class="mr-2"
-                  @click="downloadExcel"
-                  :disabled="selectedUser.length === 0"
-                >
-                  {{ t('userVue.export_excel') }}
-                </v-btn>
-                <v-btn
-                  color="info"
-                  prepend-icon="mdi-printer"
-                  @click="printUsers"
-                  :disabled="selectedUser.length === 0"
-                >
-                  {{ t('userVue.print') }}
+
+                <v-btn color="secondary" @click="printUsers" class="mb-4">
+                  <v-icon>mdi-printer</v-icon> {{ $t('userVue.print') }}
                 </v-btn>
               </v-col>
             </v-row>
+          </v-row>
 
-            <v-data-table
-              v-model="selectedUser"
-              :headers="headers"
-              :items="filteredUser"
-              item-value="id"
-              show-select
-              class="elevation-1 mt-4"
-              :loading="!isDataLoaded"
-              loading-text="Loading users..."
-              no-data-text="No users available."
-            >
-              <template v-slot:item.image="{ item }">
-                <v-avatar size="60" class="my-2">
-                  <v-img :src="getImageUrl(item.image)" alt="User Image"></v-img>
-                </v-avatar>
-              </template>
+          <v-dialog v-model="editDialog" max-width="700px" persistent>
+            <v-card>
+              <v-card-title class="text-h5 text-center py-4">
+                {{ isNewUser ? $t('userVue.add_user') : $t('userVue.edit_user') }}
+              </v-card-title>
+              <v-card-text>
+                <v-form ref="userForm" @submit.prevent="saveUser">
+                  <v-row>
+                    <v-col cols="12" sm="6">
+                      <v-text-field
+                        v-model="editedItem.name"
+                        :label="$t('userVue.name')"
+                        :rules="[v => !!v || $t('userVue.name_required')]"
+                        prepend-inner-icon="mdi-account"
+                        variant="outlined"
+                        class="mb-0"
+                      ></v-text-field>
+                    </v-col>
+                    <v-col cols="12" sm="6">
+                      <v-text-field
+                        v-model="editedItem.email"
+                        :label="$t('userVue.email')"
+                        :rules="emailRules"
+                        prepend-inner-icon="mdi-email"
+                        variant="outlined"
+                        class="mb-0"
+                      ></v-text-field>
+                    </v-col>
+                    <v-col cols="12" sm="6">
+                      <v-text-field
+                        v-model="editedItem.contact"
+                        :label="$t('userVue.contact')"
+                        :rules="contactRules"
+                        prepend-inner-icon="mdi-phone"
+                        variant="outlined"
+                        class="mb-0"
+                      ></v-text-field>
+                    </v-col>
+                    <v-col cols="12" sm="6">
+                      <v-text-field
+                        v-model="editedItem.address"
+                        :label="$t('userVue.address')"
+                        :rules="[v => !!v || $t('userVue.address_required')]"
+                        prepend-inner-icon="mdi-map-marker"
+                        variant="outlined"
+                        class="mb-0"
+                      ></v-text-field>
+                    </v-col>
+                    <v-col cols="12" sm="6">
+                      <v-text-field
+                        v-model="editedItem.store_limit"
+                      
+                        :label="$t('userVue.store_limit')"
+                        :rules="[v => !!v || $t('userVue.store_limit_required')]"
+                        prepend-inner-icon="mdi-numeric"
+                        variant="outlined"
+                        class="mb-0"
+                      ></v-text-field>
+                    </v-col>
+                    <v-col cols="12" sm="6">
+                      <v-select
+                        v-model="editedItem.status"
+                        :items="[{ title: $t('active'), value: 1 }, { title: $t('inactive'), value: 0 }]"
+                        :label="$t('userVue.status')"
+                        :rules="[v => v !== null && v !== undefined || $t('userVue.status_required')]"
+                        prepend-inner-icon="mdi-check-circle"
+                        variant="outlined"
+                        class="mb-0"
+                      ></v-select>
+                    </v-col>
+                    <v-col cols="12">
+                      <v-file-input
+                        :label="$t('userVue.user_photo_optional')"
+                        accept="image/*"
+                        prepend-inner-icon=""
+                        append-inner-icon="mdi-camera"
+                        variant="outlined"
+                        show-size
+                        clearable
+                        counter
+                        :rules="imageUploadRules"
+                        class="mb-2"
+                        v-model="editedItem.imageFile"
+                        @change="onFileSelected"
+                        :hint="$t('userVue.max_2mb_image_types')"
+                        persistent-hint
+                      ></v-file-input>
+                    </v-col>
+                  </v-row>
 
-              <template v-slot:item.status="{ item }">
-                <v-chip :color="item.status === 1 ? 'green' : 'red'" label>
-                  {{ item.status === 1 ? t('active') : t('inactive') }}
-                </v-chip>
-              </template>
+                  <div v-if="editedItem.selectedImagePreview" class="image-preview-container mb-2">
+                      <v-img :src="editedItem.selectedImagePreview" class="rounded-lg elevation-2" aspect-ratio="16/9" cover />
+                  </div>
+                  <div v-else-if="editedItem.originalImagePath" class="image-preview-container mb-2">
+                      <v-img :src="getImageUrl(editedItem.originalImagePath)" class="rounded-lg elevation-2" aspect-ratio="16/9" cover />
+                  </div>
+                  <div v-else class="no-image-placeholder mb-4">
+                      <v-icon size="80" color="grey-lighten-2">mdi-image-off-outline</v-icon>
+                      <p class="text-caption text-grey-lighten-1 mt-2">{{ $t('userVue.no_photo_selected') }}</p>
+                  </div>
 
-              <template v-slot:item.created_at="{ item }">
-                {{ new Date(item.created_at).toLocaleDateString() }}
-              </template>
+                  <center>
+                    <v-btn color="primary" type="submit" class="my-4 mx-1" :loading="loadingDialog">
+                      {{ isNewUser ? $t('userVue.add_user') : $t('userVue.save_changes') }}
+                    </v-btn>
+                    <v-btn color="error" class="my-3 mx-1" @click="closeEditDialog">
+                      {{ $t('userVue.cancel') }}
+                    </v-btn>
+                  </center>
+                </v-form>
+              </v-card-text>
+            </v-card>
+          </v-dialog>
 
-              <template v-slot:item.actions="{ item }">
-                <v-icon
-                  size="small"
-                  class="me-2"
-                  color="blue-darken-2"
-                  @click="viewUser(item)"
-                >
-                  mdi-eye
-                </v-icon>
-                <v-icon
-                  size="small"
-                  class="me-2"
-                  color="orange-darken-2"
-                  @click="openEditDialog(item)"
-                >
-                  mdi-pencil
-                </v-icon>
-                </template>
+          <div ref="printSection" class="d-none">
+            <div class="report-container">
+              <div class="watermark">BuyamSellam</div>
+              <div class="report-header-section">
+               
+                  <img src="@/assets/logo1.svg" alt="App Logo" class="report-logo">
+               
+                <div class="app-info">
+                  <h2 class="report-user-name">BuyamSellam</h2>
+                  <p class="report-user-contact-info">{{ userAddress }} | +237 {{ userContact }}</p>
+                </div>
+              </div>
 
-              <template v-slot:no-data>
-                <v-alert
-                  type="info"
-                  class="ma-2"
-                  color="blue-darken-1"
-                  icon="mdi-information"
-                  density="compact"
-                >
-                  {{ t('userVue.no_users_found') }}
-                </v-alert>
-              </template>
-            </v-data-table>
-          </v-card-text>
-        </v-card>
-      </v-container>
+              <div class="report-title-section">
+                <h3 class="report-title">{{ $t('userVue.user_list') }}</h3>
+                <p class="report-date">Date: {{ datePrint }}</p>
+              </div>
 
-      <v-dialog v-model="showUserDialog" max-width="600px">
-        <v-card>
-          <v-card-title class="headline text-h5 text-center">{{ t('userVue.user_details') }}</v-card-title>
-          <v-card-text>
-            <v-container v-if="currentUser">
+              <div class="report-summary">
+               <p>
+                  {{ t('userVue.total_entries') }}: <b>{{ selectedUser.length }}</b> {{ selectedUser.length === 1 ? $t('user') : $t('users') }}
+                </p>
+              </div>
+
+              <div class="report-table-section">
+                <table class="report-table">
+                  <thead>
+                    <tr>
+                      <th>SN</th>
+                      <th>{{ $t('userVue.name') }}</th>
+                      <th>{{ $t('userVue.email') }}</th>
+                      <th>{{ $t('userVue.contact') }}</th>
+                      <th>{{ $t('userVue.address') }}</th>
+                      <th>{{ $t('userVue.store_limit') }}</th>
+                      <th>{{ t('userVue.date_created')}}</th>
+                      <th>{{ $t('userVue.status') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(user, index) in selectedUser" :key="user.id">
+                      <td>{{ index + 1 }}</td>
+                      <td>{{ user.name }}</td>
+                      <td>{{ user.email }}</td>
+                      <td>{{ user.contact }}</td>
+                      <td>{{ user.address }}</td>
+                      <td>{{ user.store_limit }}</td>
+                      <td>{{ user.created_at.slice(0, 10) }}</td>
+                      <td>{{ user.status > 0 ? $t('active') : $t('inactive') }}</td>
+                      
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="report-footer-section">
+              <p class="powered-by">{{ $t('userVue.powered_by') }}</p>
+            </div>
+          </div>
+
+          <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="snackbarTimeout" location="top right">
+            {{ snackbarMessage }}
+          </v-snackbar>
+          <AppFooter />
+        </v-main>
+
+        <v-overlay :model-value="!isDataLoaded" class="align-center justify-center" persistent>
+          <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+          <p class="my-1 text-h6 text-white">{{ $t('loading') }}</p>
+        </v-overlay>
+
+        <v-dialog v-model="showUserDialog" max-width="700">
+          <v-card>
+            <v-card-title class="d-flex align-center">
+              {{ $t('userVue.user_details') }}
+              <v-spacer></v-spacer>
+              <v-btn icon flat @click="showUserDialog = false">
+                <v-icon>mdi-close</v-icon>
+              </v-btn>
+            </v-card-title>
+            <v-card-text v-if="currentUser">
               <v-row>
-                <v-col cols="12" class="d-flex justify-center mb-4">
-                  <v-avatar size="120" class="elevation-2">
-                    <v-img :src="getImageUrl(currentUser.image)" alt="User Image"></v-img>
-                  </v-avatar>
+                <v-col cols="12" md="5" class="d-flex justify-content-center align-center">
+                  <div class="inverted-rectangle-avatar elevation-4">
+                    <v-img :src="getImageUrl(currentUser.image)" :alt="$t('userVue.user_photo')"></v-img>
+                  </div>
                 </v-col>
-                <v-col cols="12">
-                  <p class="text-h6 text-center mb-2">{{ currentUser.name }}</p>
-                  <v-list dense>
+                <v-col cols="12" md="7">
+                  <v-list density="compact">
                     <v-list-item>
-                      <v-list-item-title class="font-weight-bold">{{ t('userVue.email') }}:</v-list-item-title>
+                      <v-list-item-title class="font-weight-medium">{{ $t('userVue.name') }}:</v-list-item-title>
+                      <v-list-item-subtitle>{{ currentUser.name }}</v-list-item-subtitle>
+                    </v-list-item>
+                    <v-list-item>
+                      <v-list-item-title class="font-weight-medium">{{ $t('userVue.email') }}:</v-list-item-title>
                       <v-list-item-subtitle>{{ currentUser.email }}</v-list-item-subtitle>
                     </v-list-item>
                     <v-list-item>
-                      <v-list-item-title class="font-weight-bold">{{ t('userVue.contact') }}:</v-list-item-title>
+                      <v-list-item-title class="font-weight-medium">{{ $t('userVue.contact') }}:</v-list-item-title>
                       <v-list-item-subtitle>{{ currentUser.contact }}</v-list-item-subtitle>
                     </v-list-item>
                     <v-list-item>
-                      <v-list-item-title class="font-weight-bold">{{ t('userVue.address') }}:</v-list-item-title>
+                      <v-list-item-title class="font-weight-medium">{{ $t('userVue.address') }}:</v-list-item-title>
                       <v-list-item-subtitle>{{ currentUser.address }}</v-list-item-subtitle>
                     </v-list-item>
                     <v-list-item>
-                      <v-list-item-title class="font-weight-bold">{{ t('userVue.role') }}:</v-list-item-title>
-                      <v-list-item-subtitle>{{ currentUser.role }}</v-list-item-subtitle>
-                    </v-list-item>
-                     <v-list-item>
-                      <v-list-item-title class="font-weight-bold">{{ t('userVue.store_limit') }}:</v-list-item-title>
+                      <v-list-item-title class="font-weight-medium">{{ $t('userVue.store_limit') }}:</v-list-item-title>
                       <v-list-item-subtitle>{{ currentUser.store_limit }}</v-list-item-subtitle>
                     </v-list-item>
                     <v-list-item>
-                      <v-list-item-title class="font-weight-bold">{{ t('userVue.status') }}:</v-list-item-title>
+                      <v-list-item-title class="font-weight-medium">{{ $t('userVue.status') }}:</v-list-item-title>
                       <v-list-item-subtitle>
-                        <v-chip :color="currentUser.status === 1 ? 'green' : 'red'" label>
-                          {{ currentUser.status === 1 ? t('active') : t('inactive') }}
+                        <v-chip :color="currentUser.status === 1 ? 'green' : 'red'" label outlined small>
+                          {{ currentUser.status === 1 ? $t('active') : $t('inactive') }}
                         </v-chip>
                       </v-list-item-subtitle>
                     </v-list-item>
                     <v-list-item>
-                      <v-list-item-title class="font-weight-bold">{{ t('userVue.date_created') }}:</v-list-item-title>
-                      <v-list-item-subtitle>{{ new Date(currentUser.created_at).toLocaleDateString() }}</v-list-item-subtitle>
+                      <v-list-item-title class="font-weight-medium">{{ $t('userVue.date_created') }}:</v-list-item-title>
+                      <v-list-item-subtitle>{{ currentUser.created_at.slice(0, 10) }}</v-list-item-subtitle>
                     </v-list-item>
                   </v-list>
                 </v-col>
               </v-row>
-            </v-container>
-          </v-card-text>
-          <v-card-actions class="justify-end">
-            <v-btn color="blue darken-1" variant="text" @click="showUserDialog = false">{{ t('userVue.close') }}</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
-
-      <v-dialog v-model="editDialog" max-width="700px" persistent>
-        <v-card>
-          <v-card-title class="text-h5 text-center">{{ isNewUser ? t('userVue.add_user') : t('userVue.edit_user') }}</v-card-title>
-          <v-card-text>
-            <v-form ref="userForm">
-              <v-container>
-                <v-row>
-                  <v-col cols="12" sm="6">
-                    <v-text-field
-                      v-model="editedItem.name"
-                      :label="t('userVue.name')"
-                      :rules="[v => !!v || t('userVue.name_required')]"
-                      required
-                    ></v-text-field>
-                  </v-col>
-                  <v-col cols="12" sm="6">
-                    <v-text-field
-                      v-model="editedItem.email"
-                      :label="t('userVue.email')"
-                      :rules="emailRules"
-                      required
-                      type="email"
-                    ></v-text-field>
-                  </v-col>
-                  <v-col cols="12" sm="6">
-                    <v-text-field
-                      v-model="editedItem.contact"
-                      :label="t('userVue.contact')"
-                      :rules="contactRules"
-                      required
-                      type="tel"
-                    ></v-text-field>
-                  </v-col>
-                  <v-col cols="12" sm="6">
-                    <v-text-field
-                      v-model="editedItem.address"
-                      :label="t('userVue.address')"
-                      :rules="[v => !!v || t('userVue.address_required')]"
-                      required
-                    ></v-text-field>
-                  </v-col>
-                  <v-col cols="12" sm="6">
-                    <v-select
-                      v-model="editedItem.role"
-                      :label="t('userVue.role')"
-                      :items="['admin', 'seller', 'customer']"
-                      :rules="[v => !!v || t('userVue.role_required')]"
-                      required
-                    ></v-select>
-                  </v-col>
-                  <v-col cols="12" sm="6">
-                    <v-text-field
-                      v-model.number="editedItem.store_limit"
-                      :label="t('userVue.store_limit')"
-                      :rules="[
-                        v => v !== null && v !== '' || t('userVue.store_limit_required'),
-                        v => (v && v > 0) || t('userVue.store_limit_positive'),
-                        v => Number.isInteger(v) || t('userVue.store_limit_integer')
-                      ]"
-                      type="number"
-                      min="1"
-                      required
-                    ></v-text-field>
-                  </v-col>
-                  <v-col cols="12" sm="6">
-                    <v-select
-                      v-model="editedItem.status"
-                      :label="t('userVue.status')"
-                      :items="[{ title: t('active'), value: 1 }, { title: t('inactive'), value: 0 }]"
-                      item-title="title"
-                      item-value="value"
-                      :rules="[v => v !== null || t('userVue.status_required')]"
-                      required
-                    ></v-select>
-                  </v-col>
-                  <v-col cols="12">
-                    <v-file-input
-                      :label="t('userVue.user_image')"
-                      accept="image/*"
-                      prepend-icon="mdi-camera"
-                      @change="onFileSelected"
-                      :rules="imageUploadRules"
-                      show-size
-                      counter
-                      chips
-                    ></v-file-input>
-                    <div class="image-preview-container mt-2" v-if="editedItem.selectedImagePreview || editedItem.originalImagePath">
-                      <v-img
-                        :src="editedItem.selectedImagePreview || getImageUrl(editedItem.originalImagePath)"
-                        alt="Image Preview"
-                        aspect-ratio="16/9"
-                        cover
-                      ></v-img>
-                    </div>
-                    <div class="no-image-placeholder mt-2" v-else>
-                      <v-icon size="60" color="grey lighten-1">mdi-image-off</v-icon>
-                      <p class="text-caption mt-2">{{ t('userVue.no_image_selected') }}</p>
-                    </div>
-                  </v-col>
-                </v-row>
-              </v-container>
-            </v-form>
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn color="blue-darken-1" variant="text" @click="closeEditDialog">{{ t('userVue.cancel') }}</v-btn>
-            <v-btn color="blue-darken-1" variant="elevated" @click="saveUser" :loading="loadingDialog">
-              {{ t('userVue.save') }}
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
-
-      <v-snackbar
-        v-model="snackbar"
-        :color="snackbarColor"
-        :timeout="snackbarTimeout"
-        top
-        right
-      >
-        {{ snackbarMessage }}
-        <template v-slot:actions>
-          <v-btn variant="text" @click="snackbar = false">{{ t('userVue.close') }}</v-btn>
-        </template>
-      </v-snackbar>
-
-      <div class="printable-content" style="display: none;">
-        <div ref="printSection" class="report-container">
-          <div class="watermark">{{ t('report_watermark') }}</div>
-
-          <div class="report-header-section">
-            <img :src="userLogoUrl" alt="Company Logo" class="report-logo" />
-            <div class="user-info">
-              <div class="report-user-name">{{ userEmail }}</div>
-              <div class="report-user-contact-info">
-                {{ userContact }} | {{ userAddress }}
-              </div>
-            </div>
-          </div>
-
-          <div class="report-title-section">
-            <div class="report-title">{{ t('userVue.user_list_report') }}</div>
-            <div class="report-date">{{ datePrint }}</div>
-          </div>
-
-          <div class="report-summary">
-            <p><strong>{{ t('userVue.total_users') }}:</strong> {{ selectedUser.length }}</p>
-          </div>
-
-          <div class="report-table-section">
-            <table class="report-table">
-              <thead>
-                <tr>
-                  <th>{{ t('userVue.sn') }}</th>
-                  <th>{{ t('userVue.profile') }}</th>
-                  <th>{{ t('userVue.name') }}</th>
-                  <th>{{ t('userVue.email') }}</th>
-                  <th>{{ t('userVue.contact') }}</th>
-                  <th>{{ t('userVue.address') }}</th>
-                  <th>{{ t('userVue.role') }}</th>
-                  <th>{{ t('userVue.store_limit') }}</th>
-                  <th>{{ t('userVue.status') }}</th>
-                  <th>{{ t('userVue.date_created') }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(user, index) in selectedUser" :key="user.id !== null ? user.id : `print-user-${index}`">
-                  <td>{{ index + 1 }}</td>
-                  <td class="d-flex align-center">
-                    <img :src="getImageUrl(user.image)" alt="Profile" class="report-table-img" />
-                  </td>
-                  <td>{{ user.name }}</td>
-                  <td>{{ user.email }}</td>
-                  <td>{{ user.contact }}</td>
-                  <td>{{ user.address }}</td>
-                  <td>{{ user.role }}</td>
-                  <td>{{ user.store_limit }}</td>
-                  <td>{{ user.status === 1 ? t('active') : t('inactive') }}</td>
-                  <td>{{ new Date(user.created_at).toLocaleDateString() }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="report-footer-section">
-            <p>{{ t('report_generation_info') }} {{ datePrint }}</p>
-            <p class="powered-by">{{ t('report_powered_by') }}</p>
-          </div>
-        </div>
-      </div>
-    </v-main>
-
-    <app-footer />
+            </v-card-text>
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn color="error" @click="showUserDialog = false">{{ $t('userVue.close') }}</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+      </v-layout>
+    </v-card>
   </v-app>
 </template>
 
@@ -383,7 +367,7 @@ import { useI18n } from 'vue-i18n';
 const { t, locale } = useI18n();
 
 interface User {
-  id: number | null;
+  id: number;
   name: string;
   email: string;
   contact: string;
@@ -421,12 +405,12 @@ const userForm = ref<any>(null); // Use VForm type if you have it, otherwise 'an
 const loadingDialog = ref(false);
 
 const editedItem = ref<User & { imageFile: File[] | null; selectedImagePreview: string | null; originalImagePath: string | null; }>({
-  id: null,
+  id: 0,
   name: '',
   email: '',
   contact: '',
-  address: '',
   role: '',
+  address: '',
   store_limit: 1, // Corrected typo here
   status: 1,
   image: null,
@@ -506,7 +490,7 @@ function showSnackbar(message: string, color: string) {
   snackbar.value = true;
 }
 
-const backendUrl = 'http://localhost:8000';
+const backendUrl = 'https://api.buyam-sellam.oc-classic.com';
 
 const getImageUrl = (imagePath: string | undefined | null) => {
   if (!imagePath) {
@@ -591,7 +575,6 @@ function openEditDialog(item: User | null = null) {
       email: '',
       contact: '',
       address: '',
-      role: '',
       store_limit: 1, // Corrected typo here
       status: 1,
       image: null,
@@ -658,7 +641,6 @@ function closeEditDialog() {
     email: '',
     contact: '',
     address: '',
-    role: '',
     store_limit: 1, // Corrected typo here
     status: 1,
     image: null,
@@ -701,7 +683,7 @@ async function saveUser() {
     formData.append('address', editedItem.value.address);
     formData.append('role', editedItem.value.role);
     // FIXED: Convert store_limit to string, provide default 0 if null
-    formData.append('store_limit', String(editedItem.value.store_limit ?? 0));
+    formData.append('store_limit', String(editedItem.value.store_limit ?? 1));
     formData.append('status', editedItem.value.status.toString());
 
     if (editedItem.value.imageFile && editedItem.value.imageFile.length > 0) {
@@ -777,9 +759,9 @@ function downloadExcel() {
     t('userVue.email'),
     t('userVue.contact'),
     t('userVue.address'),
-    t('userVue.role'),
-    t('userVue.status'),
-    t('userVue.date_hired')
+    t('userVue.store_limit'),
+    t('userVue.date_created'),
+    t('userVue.status')
   ];
 
   const rows = selectedUser.value.map((user, index) => [
@@ -788,9 +770,10 @@ function downloadExcel() {
     user.email,
     user.contact,
     user.address,
-    user.role,
-    user.status === 1 ? t('active') : t('inactive'),
-    new Date(user.created_at).toLocaleDateString()
+    user.store_limit,
+    new Date(user.created_at).toLocaleDateString(),
+    user.status === 1 ? t('active') : t('inactive')
+   
   ]);
 
   // Combine headers and rows
@@ -862,7 +845,6 @@ function printUsers() {
                 padding-bottom: 10px;
                 border-bottom: 2px solid #eee;
               }
-                
               .report-logo {
                 max-width: 100px;
                 max-height: 80px;

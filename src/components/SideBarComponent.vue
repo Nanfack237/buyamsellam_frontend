@@ -213,7 +213,7 @@ const storeName = ref('');
 const hasStoreId = ref(false);
 const userRole = ref(''); // New reactive ref for user role
 
-const backendUrl = 'http://localhost:8000'; // MAKE SURE THIS MATCHES YOUR LARAVEL APP_URL OR ASSET_URL
+const backendUrl = 'https://api.buyam-sellam.oc-classic.com'; // MAKE SURE THIS MATCHES YOUR LARAVEL APP_URL OR ASSET_URL
 
 const userProfileImage = computed(() => {
   if (userProfileImagePath.value) {

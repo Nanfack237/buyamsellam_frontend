@@ -267,7 +267,7 @@ const { startLoading, stopLoading } = useLoader();
 const { t, locale} = useI18n(); // Destructure t and tm for message pluralization
 
 // Adjust this backend URL if your Laravel API is hosted elsewhere
-const backendUrl = 'http://localhost:8000';
+const backendUrl = 'https://api.buyam-sellam.oc-classic.com';
 
 const getLogoUrl = (logoPath: string | undefined | null) => {
   if (logoPath && !logoPath.startsWith('http') && !logoPath.includes('storage')) {
@@ -327,16 +327,18 @@ const formattedDate = computed(() => {
   return date.toLocaleDateString(locale.value, options);
 });
 
-const datePrint = computed(() => {
-  const date = new Date();
-  // Using 'en-CA' or 'fr-CA' (Canadian English/French) often yields YYYY-MM-DD consistently.
-  // Alternatively, you could use 'en-US' and then manually reverse the order if needed, but this is cleaner.
-  return new Intl.DateTimeFormat(`${locale.value}-CA`, { // Or 'fr-CA' if you prefer French locale specifically for formatting
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  }).format(date);
-});
+function formatDateDDMMYYYY(date: Date): string {
+  const day = String(date.getDate()).padStart(2, '0'); // Get day (1-31) and pad with '0' if single digit
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // Get month (0-11) so add 1, pad with '0'
+  const year = date.getFullYear(); // Get full year
+
+  return `${day}-${month}-${year}`;
+}
+
+// Example Usage:
+const today = new Date(); // Or any other date object
+const datePrint = formatDateDDMMYYYY(today);
+
 
 
 const grandTotal = computed(() => {
