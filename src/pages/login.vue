@@ -2,7 +2,7 @@
   <v-app>
     <div class="backgruond">
       <div class="logo-and-text-container">
-        <v-img src="@/assets/logo1.svg" height="170" width="120" :alt="t('loginPage.logoAlt')" class="mx-6 py-0"></v-img>
+        <v-img src="@/assets/logo1.svg" height="170" width="120" :alt="t('loginPage.logoAlt')" class="mr-5 py-0"></v-img>
         <span class="brand-name">BuyamSellam</span> 
       </div>
     </div>
