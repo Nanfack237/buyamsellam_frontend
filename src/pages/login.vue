@@ -3,19 +3,19 @@
     <div class="backgruond">
       <div class="logo-and-text-container">
         <v-img src="@/assets/logo1.svg" height="170" width="120" :alt="t('loginPage.logoAlt')" class="mr-5 py-0"></v-img>
-        <span class="brand-name">BuyamSellam</span> 
+        <span class="brand-name"><span style="color: rgb(13, 71, 161, 5);">Buyam</span><span style="color: rgba(100, 200, 150, 0.6);">Sellam</span></span>
       </div>
     </div>
 
     <v-main class="d-flex justify-center align-center">
       <v-row>
-        <v-col cols="10" lg="4" class="mx-auto">
+        <v-col cols="10" lg="4" md="6" sm="6" class="mx-auto">
           <v-card class="mx-6 pa-4" elevation="5">
             <div class="text-center">
-              <v-avatar size="80" color="blue-darken-4">
-                <v-icon size="40" >mdi-account</v-icon>
+              <v-avatar size="80" color="blue-lighten-4">
+                <v-img src="@/assets/logo1.svg" height="50" width="50" :alt="t('loginPage.logoAlt')" class="mr-1 mb-1 "></v-img>
               </v-avatar>
-              <span class="p--text pa-4">
+              <span class="p--text ">
                 <h2 class="mt-0 pt-4">{{ t('loginPage.loginTitle') }}</h2>
               </span>
             </div>
