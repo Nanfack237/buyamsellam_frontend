@@ -1,7 +1,10 @@
 <template>
   <v-app>
     <div class="backgruond">
-
+      <div class="logo-and-text-container">
+        <v-img src="@/assets/logo1.svg" height="170" width="120" :alt="t('loginPage.logoAlt')" class="mx-6 py-0"></v-img>
+        <span class="brand-name">BuyamSellam</span> 
+      </div>
     </div>
 
     <v-main class="d-flex justify-center align-center">
@@ -373,10 +376,27 @@ onMounted(async () => {
   background-image: url(@/assets/loginBanner.jpg) !important;
   height: 50%;
   width: 100%;
-  display: block;
   position: absolute;
   top: 0;
   background-size: cover;
+
+  display: flex; /* Makes .backgruond a flex container */
+  justify-content: center; /* Centers items horizontally */
+ 
   
+}
+
+.logo-and-text-container {
+  display: flex; /* Makes this a flex container */
+  
+}
+
+.brand-name {
+  color: white; /* Choose a color that stands out on your background */
+  font-size: 50px; /* Adjust font size as needed */
+  font-weight: bold; /* Make it bold */
+  margin-top: 50px;
+  display: flex;
+  /* Add any other text styling you want */
 }
 </style>
