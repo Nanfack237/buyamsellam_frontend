@@ -370,13 +370,13 @@ onMounted(async () => {
 <style scoped>
 /* Your existing styles */
 .backgruond {
-  background-image: url('./src/assets/login-banner.jpg') !important;
+  background-image: url('/login-banner.jpg') !important;
   height: 50%;
   width: 100%;
   display: block;
   position: absolute;
   top: 0;
   background-size: cover;
-  filter: blur(0px); /* Apply blur effect to the background */
+  
 }
 </style>
