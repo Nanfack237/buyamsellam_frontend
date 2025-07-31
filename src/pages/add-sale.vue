@@ -245,6 +245,19 @@ const formattedDate = computed(() => {
   return date.toLocaleDateString(locale.value, options);
 });
 
+function formatDateDDMMYYYY(date: Date): string {
+  const day = String(date.getDate()).padStart(2, '0'); // Get day (1-31) and pad with '0' if single digit
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // Get month (0-11) so add 1, pad with '0'
+  const year = date.getFullYear(); // Get full year
+
+  return `${day}-${month}-${year}`;
+}
+
+// Example Usage:
+const today = new Date(); // Or any other date object
+const datePrint = formatDateDDMMYYYY(today);
+
+
 const costPriceOptions = computed<CostPriceOption[]>(() => {
   if (selectedProduct.value === null) {
     return [];
@@ -314,7 +327,7 @@ function generateUniqueReceiptId(): string {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let result = '';
   const charactersLength = characters.length;
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 12; i++) {
     result += characters.charAt(Math.floor(Math.random() * charactersLength));
   }
   return result;
@@ -469,6 +482,7 @@ async function fetchStoreDetails() {
  * @param {string} receiptId - Unique receipt ID for the transaction.
  */
 async function sendReceiptToManager(items: SaleReceiptItem[], total: number, customer: string, receiptId: string) {
+
   const token = sessionStorage.getItem('access_token');
   const currentLocale = localStorage.getItem('user_locale') || 'en';
 
@@ -485,7 +499,7 @@ async function sendReceiptToManager(items: SaleReceiptItem[], total: number, cus
       receipt_id: receiptId,
       customer_name: customer,
       cashier_name: userName.value,
-      sale_date: new Date().toLocaleDateString(currentLocale),
+      sale_date: datePrint,
       items: items.map(item => ({
         name: item.product.name,
         quantity: item.quantity,
@@ -510,13 +524,13 @@ async function sendReceiptToManager(items: SaleReceiptItem[], total: number, cus
       showSnackbar(t('snackbarReceiptEmailSent'), 'success');
       console.log('Receipt email sent successfully to manager.');
     } else {
-      showSnackbar(response.data.message || t('snackbarReceiptEmailFailed'), 'error');
+      showSnackbar( t('snackbarReceiptEmailFailed') || response.data.message, 'error');
       console.error('Failed to send receipt email:', response.data.message);
     }
   } catch (error) {
     console.error('Error sending receipt email:', error);
     showSnackbar(t('snackbarReceiptEmailError'), 'error');
-  }
+  } 
 }
 
 const submitSale = async () => {
@@ -595,6 +609,8 @@ const submitSale = async () => {
     if (response.data.success) {
       showSnackbar(t('saleTransaction.snackbar.saleSuccess', { remaining: response.data.quantity_remaining }), 'success');
 
+       isDataLoaded.value = true;
+
       const productDetailsForReceipt = productLists.value.find(
         p => p.id === selectedProduct.value
       );
@@ -633,7 +649,7 @@ const submitSale = async () => {
       await fetchStocks(); // Important: Re-fetch stocks to get updated quantities
 
     } else {
-      showSnackbar(response.data.error || response.data.message || t('commonSaleTransactionVue.snackbar.unknownError'), 'error');
+      showSnackbar(String(t('commonSaleTransactionVue.snackbar.unknownError') || response.data.error), 'error');
     }
   } catch (error: any) {
     console.error('Error saving the transaction:', error);
@@ -651,6 +667,7 @@ const submitSale = async () => {
     }
   } finally {
     isSubmitting.value = false;
+    
   }
 };
 

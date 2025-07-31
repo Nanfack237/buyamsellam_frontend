@@ -86,6 +86,9 @@
                 <template v-slot:item.unit_price="{ item }">
                     {{ formatNumberWithThousandsSeparator(item.unit_price) }}
                 </template>
+                <template v-slot:item.total_price="{ item }">
+                    {{ formatNumberWithThousandsSeparator(item.total_price) }}
+                </template>
                 
                 <!-- <template v-slot:item.actions="{ item }">
                   <v-btn icon size="small" :title="t('purchaseTransactionsVue.viewTransactionTitle')" class="mx-2" color="secondary" @click="viewPurchase(item)">
@@ -139,6 +142,7 @@
                       <th class="text-left">{{ t('purchaseTransactionsVue.productHeader') }}</th>
                       <th class="text-left">{{ t('purchaseTransactionsVue.costPriceHeader') }}</th>
                       <th class="text-left">{{ t('purchaseTransactionsVue.quantityHeader') }}</th>
+                      <th class="text-left">{{ t('Total (FCFA)') }}</th>
                       <th class="text-left">{{ t('purchaseTransactionsVue.supplierHeader') }}</th>
                       <th class="text-left">{{ t('purchaseTransactionsVue.recordedByHeader') }}</th>
                       <th class="text-left">{{ t('purchaseTransactionsVue.dateHeader') }}</th>
@@ -148,7 +152,9 @@
                     <tr v-for="(p, index) in selectedPurchase" :key="p.id">
                       <td>{{ index + 1 }}</td>
                       <td>{{ p.productName }}</td>
-                      <td>{{ formatNumberWithThousandsSeparator(p.unit_price) }}</td> <td>{{ p.quantity }}</td>
+                      <td>{{ formatNumberWithThousandsSeparator(p.unit_price) }}</td> 
+                      <td>{{ p.quantity }}</td>
+                      <td>{{ formatNumberWithThousandsSeparator(p.total_price) }}</td> 
                       <td>{{ p.supplierName }}</td>
                       <td>{{ p.recordedBy }}</td>
                       <td>{{ p.date }}</td>
@@ -216,6 +222,7 @@ interface Purchase {
   productName: string;
   unit_price: Number;
   quantity: number;
+  total_price: number;
   supplierName: string;
   recordedBy: string; // Original path from DB for image 1
   date: string;
@@ -276,6 +283,7 @@ const headers = computed<DataTableHeader<Purchase>[]>(() => [
   { title: t('purchaseTransactionsVue.productHeader'), value: 'productName', align: 'center' as const },
   { title: t('purchaseTransactionsVue.costPriceHeader'), value: 'unit_price', align: 'center' as const },
   { title: t('purchaseTransactionsVue.quantityHeader'), value: 'quantity', align: 'center' as const},
+  { title: t('Total (FCFA)'), value: 'total_price', align: 'center' as const},
   { title: t('purchaseTransactionsVue.supplierHeader'), value: 'supplierName', align: 'center' as const},
   { title: t('purchaseTransactionsVue.recordedByHeader'), value: 'recordedBy', align: 'center' as const},
   { title: t('purchaseTransactionsVue.dateHeader'), value: 'date', align: 'center' as const},

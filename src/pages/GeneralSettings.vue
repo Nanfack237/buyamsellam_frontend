@@ -267,7 +267,6 @@ function formatDateDDMMYYYY(date: Date): string {
 const today = new Date(); // Or any other date object
 const datePrint = formatDateDDMMYYYY(today);
 
-
 const formRef = ref(null);
 
 const changePassword = async () => {

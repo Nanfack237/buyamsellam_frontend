@@ -22,15 +22,29 @@
           </v-row>
 
           <v-row justify="space-between" class="d-flex px-5 pt-2">
-            <v-col cols="12" md="6" sm="6">
+            <v-col cols="12" md="7" sm="6">
               {{ t('quantityInStock') }}: <b style="font-size: larger;">{{ formatNumberWithThousandsSeparator(totalStockQtty) || 0 }}</b>
             </v-col>
-            <v-col cols="12" md="3" sm="6">
+             <v-col cols="12" md="3" sm="6">
               <v-text-field
                 v-model="search"
                 density="compact"
                 :label="t('searchByNameLabel')"
                 prepend-inner-icon="mdi-magnify"
+                variant="solo-filled"
+                flat
+                hide-details
+                single-line
+              />
+            </v-col>
+            <v-col cols="12" md="2" sm="6">
+              <v-select
+                v-model="stockStatusFilter"
+                density="compact"
+                :label="t('filterByStockStatusLabel')"
+                :items="stockStatusFilterOptions"
+                item-title="text"
+                item-value="value"
                 variant="solo-filled"
                 flat
                 hide-details
@@ -222,27 +236,25 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, nextTick, computed, watch } from 'vue'; // Import 'watch'
-import axios from '@/axios'; // Ensure this path is correct for your axios instance
+import { ref, onMounted, nextTick, computed, watch } from 'vue';
+import axios from '@/axios';
 import SideBarComponent from '@/components/SideBarComponent.vue';
 import HeaderComponent from '@/components/HeaderComponent.vue';
 import AppFooter from '@/components/AppFooter.vue';
-import { useI18n } from 'vue-i18n'; // Import useI18n
+import { useI18n } from 'vue-i18n';
 
 import type { VDataTable } from 'vuetify/components';
 
 type VDataTableInternalHeaders = NonNullable<VDataTable['$props']['headers']>;
-
-// 2. Then, get the type of a single item from that NonNullable array
 type DataTableHeader<T> = VDataTableInternalHeaders[number] & {
   value?: keyof T | 'data-table-expand' | 'data-table-select' | (string & {});
 };
+
 // --- Internationalization setup ---
 const { t, locale } = useI18n();
 
 // --- Configuration for Backend URL ---
-const backendUrl = 'https://api.buyam-sellam.oc-classic.com'; // Make sure this matches your Laravel backend URL
-
+const backendUrl = 'https://api.buyam-sellam.oc-classic.com';
 
 const getLogoUrl = (logoPath: string | undefined | null) => {
   if (logoPath && !logoPath.startsWith('http') && !logoPath.includes('storage')) {
@@ -254,33 +266,38 @@ const getLogoUrl = (logoPath: string | undefined | null) => {
 interface Stock {
   id: number;
   productName: string;
-  cost_price: Number;
+  cost_price: number;
   quantity: number;
   last_quantity: number;
   selling_price: number;
   total_price: number;
   status: number;
- 
+  threshold_quantity: number; // Added threshold_quantity
+  status_icon?: string; // Optional property for icon
+  status_color?: string; // Optional property for color
+  updated_at: string;
 }
+
 // --- Reactive State ---
-const stocks = ref<any[]>([]);
+const stocks = ref<Stock[]>([]);
 const products = ref<any[]>([]);
 const suppliers = ref<any[]>([]);
 const shortage = ref<any[]>([]);
 const totalStockQtty = ref(0);
 const search = ref('');
+const stockStatusFilter = ref<string | null>(null); // New reactive variable for stock status filter
 
 const snackbar = ref(false);
 const snackbarMessage = ref('');
 const snackbarColor = ref('');
 const snackbarTimeout = 3000;
 
-const selectedStock = ref<any[]>([]);
+const selectedStock = ref<Stock[]>([]);
 
 const storeName = ref('');
 const storeContact = ref('');
 const storeLocation = ref('');
-const storeLogoUrl = ref(''); // Reactive variable for store logo URL
+const storeLogoUrl = ref('');
 
 const printSection = ref<HTMLElement | null>(null);
 
@@ -309,30 +326,28 @@ const defaultItem = {
 // Form reference for validation
 const form = ref<any>(null);
 
-// --- Composables and Utilities ---
-
-
 // --- Computed Properties ---
 const formattedDate = computed(() => {
   const date = new Date();
   const options: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  // Use the current locale for date formatting
   return date.toLocaleDateString(locale.value, options);
 });
 
 function formatDateDDMMYYYY(date: Date): string {
-  const day = String(date.getDate()).padStart(2, '0'); // Get day (1-31) and pad with '0' if single digit
-  const month = String(date.getMonth() + 1).padStart(2, '0'); // Get month (0-11) so add 1, pad with '0'
-  const year = date.getFullYear(); // Get full year
-
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
   return `${day}-${month}-${year}`;
 }
 
-// Example Usage:
-const today = new Date(); // Or any other date object
+const today = new Date();
 const datePrint = formatDateDDMMYYYY(today);
 
-
+const stockStatusFilterOptions = computed(() => [
+  { text: t('allStocksLabel'), value: null },
+  { text: t('belowAtThresholdLabel'), value: 'low' },
+  { text: t('aboveThresholdLabel'), value: 'high' },
+]);
 
 // Headers computed property to react to locale changes
 const headers = computed<DataTableHeader<Stock>[]>(() => [
@@ -346,9 +361,23 @@ const headers = computed<DataTableHeader<Stock>[]>(() => [
 ]);
 
 const filteredStock = computed(() => {
-  return stocks.value.filter(stock => {
-    return stock.productName.toLowerCase().includes(search.value.toLowerCase());
-  });
+  let filtered = stocks.value;
+
+  // Apply search filter
+  if (search.value) {
+    filtered = filtered.filter(stock =>
+      stock.productName.toLowerCase().includes(search.value.toLowerCase())
+    );
+  }
+
+  // Apply stock status filter
+  if (stockStatusFilter.value === 'low') {
+    filtered = filtered.filter(stock => stock.quantity <= stock.threshold_quantity);
+  } else if (stockStatusFilter.value === 'high') {
+    filtered = filtered.filter(stock => stock.quantity > stock.threshold_quantity);
+  }
+
+  return filtered;
 });
 
 // --- Methods ---
@@ -395,7 +424,7 @@ async function fetchStock() {
       const prod = products.value.find(p => String(p.id) === String(stock.product_id));
       return {
         ...stock,
-        productName: prod ? prod.name : t('productNotFound'), // Translate "Product Not Found"
+        productName: prod ? prod.name : t('productNotFound'),
         status_icon: stock.quantity <= stock.threshold_quantity ? 'mdi-arrow-down-bold-circle' : 'mdi-arrow-up-bold-circle',
         status_color: stock.quantity <= stock.threshold_quantity ? 'red' : 'green'
       };
@@ -414,7 +443,7 @@ async function shortageCount() {
     shortage.value = res.data.shortage;
   } catch (error) {
     console.error('Error fetching shortage count:', error);
-    showSnackbar(t('snackbar.failedToLoadShortageCount'), 'error');
+    // showSnackbar(t('snackbar.failedToLoadShortageCount'), 'error');
   }
 }
 
@@ -436,7 +465,6 @@ async function fetchStore() {
     storeLogoUrl.value = getLogoUrl(response.data.stores.logo);
   } catch (error) {
     console.error('Error fetching store details:', error);
-    // showSnackbar('Error fetching store details', 'error'); // Only show if critical
   }
 }
 
@@ -465,11 +493,9 @@ function printStocks() {
     const printContent = printSection.value.innerHTML;
     const printWindow = window.open('', '', 'width=900,height=700');
 
-    // Use current locale for date formatting in the filename
     const dateForFilename = new Date().toLocaleDateString(locale.value); 
     
-    // Check if printWindow was successfully opened
-    if (printWindow) { // Add this check
+    if (printWindow) {
       if (printContent) {
         printWindow.document.write(`
           <html>
@@ -568,7 +594,6 @@ function printStocks() {
                   z-index: -8; 
                   -webkit-print-color-adjust: exact !important; 
                   print-color-adjust: exact !important;
-                  
                 }
               </style>
             </head>
@@ -582,7 +607,7 @@ function printStocks() {
                     window.close();
                   };
                 };
-                <\/script>
+              <\/script>
             </body>
           </html>
         `);
@@ -592,8 +617,7 @@ function printStocks() {
         showSnackbar(t('snackbar.printError'), 'error');
       }
     } else {
-      // Handle the case where the print window could not be opened (e.g., pop-up blocked)
-      showSnackbar(t('snackbar.popupBlocked'), 'warning'); // Assuming you have a translation for this
+      showSnackbar(t('snackbar.popupBlocked'), 'warning');
     }
   });
 }
@@ -702,7 +726,7 @@ async function saveStock() {
       showSnackbar(t('snackbar.stockAddedSuccess'), 'success');
       // Re-fetch all data to ensure the UI is up-to-date with new stock levels
       await Promise.all([
-        fetchProducts(), // Re-fetch products just in case
+        fetchProducts(),
         fetchStock(),
         totalStock(),
         shortageCount(),
@@ -726,8 +750,7 @@ async function saveStock() {
 // --- Lifecycle Hooks ---
 onMounted(async () => {
   isDataLoaded.value = false;
-  // Fetch products first as stock data depends on product names
-  await fetchProducts(); 
+  await fetchProducts();
   await Promise.all([
     fetchSuppliers(),
     fetchStock(),
@@ -739,10 +762,7 @@ onMounted(async () => {
 
 // Watch locale changes to ensure all dynamic elements sensitive to locale (dates, numbers, productNotFound) are updated.
 watch(locale, async () => {
-  // Re-fetch stock to re-apply product name translations (if 'productNotFound' was used)
-  // Or if product names themselves might be keys from backend (less common for tables)
-  // For most cases, re-fetching products and stock will ensure all labels are current.
-  isDataLoaded.value = false; // Show loading overlay again
+  isDataLoaded.value = false;
   await fetchProducts(); 
   await Promise.all([
     fetchSuppliers(),
@@ -752,8 +772,6 @@ watch(locale, async () => {
     shortageCount(),
   ]);
 }, { immediate: false });
-
-
 </script>
 
 <style scoped>

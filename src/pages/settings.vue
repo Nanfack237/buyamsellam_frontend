@@ -310,8 +310,8 @@
             </v-card-text>
             <v-card-actions>
               <v-spacer></v-spacer>
-              <v-btn color="grey-darken-1" variant="text" @click="cancelDailySummaryToggle">{{ $t('managerSettings.cancel') }}</v-btn>
-              <v-btn color="primary" variant="flat" @click="confirmDailySummaryToggle" :loading="loading">{{ $t('managerSettings.confirm') }}</v-btn>
+              <v-btn color="cancel" variant="text" @click="cancelDailySummaryToggle">{{ $t('managerSettings.cancel') }}</v-btn>
+              <v-btn color="success" variant="flat" @click="confirmDailySummaryToggle" :loading="loading">{{ $t('managerSettings.confirm') }}</v-btn>
             </v-card-actions>
           </v-card>
         </v-dialog>
@@ -321,55 +321,6 @@
   </v-app>
 </template>
 
-<style scoped>
-.custom-border-card {
-  border-left: 5px solid #496896; /* Example color, adjust as needed */
-  border-radius: 8px;
-}
-
-.image-preview-container {
-  max-width: 100%;
-  height: auto; /* Adjust height as needed */
-  overflow: hidden; /* Ensures the image doesn't overflow */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.no-image-placeholder {
-  background-color: #f5f5f5;
-  border: 2px dashed #e0e0e0;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%; /* Ensure it takes full width of its container */
-}
-
-/* Specific styles for logo preview to ensure proper centering */
-.v-col.text-right .image-preview-container {
-  display: flex;
-  justify-content: flex-end; /* Align to the right as per your template's col class */
-  align-items: center;
-}
-
-.v-col.text-right .no-image-placeholder {
-    margin-left: auto; /* Pushes the placeholder to the right */
-    margin-right: 0;
-}
-
-/* Adjust image preview v-img sizing within its container */
-.image-preview-container .v-img {
-  width: 100%; /* Make v-img take full width of its container */
-  height: auto;
-}
-
-/* Override default Vuetify file input prepend-icon spacing */
-.v-file-input .v-input__prepend-outer {
-  margin-inline-end: 0; /* Remove default margin */
-}
-</style>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
@@ -945,26 +896,90 @@ onMounted(() => {
   fetchStockThreshold()
 });
 </script>
-
+<!-- 
 <style scoped>
 .custom-border-card {
-  border-left: 5px solid #496896; /* Example color, adjust as needed */
-  border-radius: 8px;
+  border-color: rgba(128, 128, 128, 0.3) !important;
+  border-width: 1px !important;
+  border-style: solid !important;
 }
 
 .image-preview-container {
-  max-width: 100%;
-  height: auto; /* Adjust height as needed */
-  overflow: hidden; /* Ensures the image doesn't overflow */
+  min-height: fit-content;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f5f5f5;
+  border-radius: 5px;
+  /* Added a specific height for the container, adjust as needed */
+  height: 200px;
 }
 
 .no-image-placeholder {
-  background-color: #f5f5f5;
-  border: 2px dashed #e0e0e0;
-  border-radius: 8px;
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+  height: 200px; /* Adjusted height for better fit with two image cards */
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  border: 1px dashed #ccc;
+  color: #aaa;
+}
+</style> -->
+
+<style scoped>
+.custom-border-card {
+  border-color: rgba(128, 128, 128, 0.3) !important;
+  border-width: 1px !important;
+  border-style: solid !important;
+}
+
+.image-preview-container {
+  min-height: fit-content;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f5f5f5;
+  border-radius: 5px;
+  /* Added a specific height for the container, adjust as needed */
+  height: 200px;
+}
+
+.no-image-placeholder {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 200px; /* Adjusted height for better fit with two image cards */
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  border: 1px dashed #ccc;
+  color: #aaa;
+}
+
+/* Specific styles for logo preview to ensure proper centering */
+.v-col.text-right .image-preview-container {
+  display: flex;
+  justify-content: flex-end; /* Align to the right as per your template's col class */
+  align-items: center;
+}
+
+.v-col.text-right .no-image-placeholder {
+    margin-left: auto; /* Pushes the placeholder to the right */
+    margin-right: 0;
+}
+
+/* Adjust image preview v-img sizing within its container */
+.image-preview-container .v-img {
+  width: 100%; /* Make v-img take full width of its container */
+  height: auto;
+}
+
+/* Override default Vuetify file input prepend-icon spacing */
+.v-file-input .v-input__prepend-outer {
+  margin-inline-end: 0; /* Remove default margin */
 }
 </style>

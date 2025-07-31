@@ -27,8 +27,6 @@ import { createI18n } from 'vue-i18n';
 import enMessages from './locales/en.json'; // MUST match file system casing
 import frMessages from './locales/fr.json'; // MUST match file system casing
 
-console.log('English Messages:', enMessages); // Add this line
-console.log('French Messages:', frMessages); // Add this line
 
 // --- Vue I18n Setup ---
 const i18nMessages = {

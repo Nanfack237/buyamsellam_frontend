@@ -235,7 +235,7 @@ import type { CartItem } from '@/stores/cartStore';
 import { useI18n } from 'vue-i18n';
 
 // --- Composables and Utilities ---
-const { t, locale } = useI18n();
+const { t } = useI18n();
 
 // Define Product interface to match your Product.vue
 interface Product {
@@ -308,17 +308,6 @@ const managerEmail = ref<string | null>(null);
 //   return date.toLocaleDateString(locale.value, options);
 // });
 
-const datePrint = computed(() => {
-  const date = new Date();
-  // Using 'en-CA' or 'fr-CA' (Canadian English/French) often yields YYYY-MM-DD consistently.
-  // Alternatively, you could use 'en-US' and then manually reverse the order if needed, but this is cleaner.
-  return new Intl.DateTimeFormat(`${locale.value}-CA`, { // Or 'fr-CA' if you prefer French locale specifically for formatting
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  }).format(date);
-});
-
 function formatDateDDMMYYYY(date: Date): string {
   const day = String(date.getDate()).padStart(2, '0'); // Get day (1-31) and pad with '0' if single digit
   const month = String(date.getMonth() + 1).padStart(2, '0'); // Get month (0-11) so add 1, pad with '0'
@@ -329,7 +318,8 @@ function formatDateDDMMYYYY(date: Date): string {
 
 // Example Usage:
 const today = new Date(); // Or any other date object
-const formatted = formatDateDDMMYYYY(today);
+const datePrint = formatDateDDMMYYYY(today);
+
 
 const receiptCustomerName = computed(() => {
   return lastSaleCustomerName.value || t('receipt.anonymousCustomer');
@@ -493,7 +483,7 @@ function generateUniqueReceiptId(): string {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let result = '';
   const charactersLength = characters.length;
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 12; i++) {
     result += characters.charAt(Math.floor(Math.random() * charactersLength));
   }
   return result;
@@ -656,7 +646,7 @@ async function sendReceiptToManager(items: SaleReceiptItem[], total: number, cus
       receipt_id: receiptId,
       customer_name: customer,
       cashier_name: userName.value,
-      sale_date: formatted,
+      sale_date: datePrint,
       items: items.map(item => ({
         name: item.product.name,
         quantity: item.quantity,

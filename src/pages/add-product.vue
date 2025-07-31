@@ -507,6 +507,7 @@ const addProduct = async () => {
       // Re-fetch products to ensure the category dropdown is up-to-date,
       // especially if a new category was added.
       await fetchProductsForCategories();
+       router.push('/product');
     } else if (response.data.error) {
       showSnackbar(response.data.error, 'error');
     } else {
